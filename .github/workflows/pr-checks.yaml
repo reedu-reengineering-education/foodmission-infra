@@ -1,0 +1,105 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  helm-lint:
+    name: Helm Lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chart: [foodmission, observability]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Add Helm repos
+        run: |
+          helm repo add bitnami-sealed-secrets https://bitnami-labs.github.io/sealed-secrets
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+          helm repo update
+
+      - name: Build dependencies — ${{ matrix.chart }}
+        run: helm dep build charts/${{ matrix.chart }}
+
+      - name: Lint — ${{ matrix.chart }}
+        run: helm lint charts/${{ matrix.chart }}
+
+  helm-template:
+    name: Helm Template + kubeconform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Install kubeconform
+        run: |
+          curl -sSLo kubeconform.tar.gz \
+            https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz
+          tar xf kubeconform.tar.gz
+          sudo mv kubeconform /usr/local/bin/
+
+      - name: Add Helm repos
+        run: |
+          helm repo add bitnami-sealed-secrets https://bitnami-labs.github.io/sealed-secrets
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+          helm repo update
+
+      - name: Build dependencies — foodmission
+        run: helm dep build charts/foodmission
+
+      - name: Build dependencies — observability
+        run: helm dep build charts/observability
+
+      - name: Template + validate — foodmission (test)
+        run: |
+          helm template foodmission charts/foodmission \
+            -f charts/foodmission/values.yaml \
+            -f charts/foodmission/test.values.yaml \
+            | kubeconform \
+              --strict \
+              --ignore-missing-schemas \
+              --kubernetes-version 1.32.0 \
+              --summary
+
+      - name: Template + validate — foodmission (staging)
+        run: |
+          helm template foodmission charts/foodmission \
+            -f charts/foodmission/values.yaml \
+            -f charts/foodmission/staging.values.yaml \
+            | kubeconform \
+              --strict \
+              --ignore-missing-schemas \
+              --kubernetes-version 1.32.0 \
+              --summary
+
+      - name: Template + validate — foodmission (prod)
+        run: |
+          helm template foodmission charts/foodmission \
+            -f charts/foodmission/values.yaml \
+            -f charts/foodmission/prod.values.yaml \
+            | kubeconform \
+              --strict \
+              --ignore-missing-schemas \
+              --kubernetes-version 1.32.0 \
+              --summary
+
+      - name: Template + validate — observability
+        run: |
+          helm template observability charts/observability \
+            -f charts/observability/values.yaml \
+            | kubeconform \
+              --strict \
+              --ignore-missing-schemas \
+              --kubernetes-version 1.32.0 \
+              --summary
