@@ -69,16 +69,35 @@ Typical flow:
 
 Secrets are managed with [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets).
 
+### Initial Setup (One-Time)
+
+Install the sealed-secrets controller once for the entire cluster:
+
+```bash
+# Add the Helm repository
+helm repo add sealed-secrets https://bitnami-labs.github.io/sealed-secrets
+helm repo update
+
+# Install cluster-wide controller
+helm install sealed-secrets sealed-secrets/sealed-secrets \
+  --namespace kube-system \
+  --set fullnameOverride=sealed-secrets-controller
+```
+
+### Sealing Secrets
+
 1. Fill in real values in `secrets/<env>.plain.yaml` (never commit these)
-2. Seal them:
+2. Seal them using the cluster-wide controller:
    ```bash
    kubeseal \
-     --controller-namespace=foodmission-<env> \
-     --controller-name=foodmission-<env>-sealed-secrets \
+     --controller-namespace=kube-system \
+     --controller-name=sealed-secrets-controller \
      -f secrets/<env>.plain.yaml \
      -o yaml > secrets/<env>.sealed.yaml
    ```
 3. Commit and push the `*.sealed.yaml` file
+
+The controller watches all namespaces and will automatically unseal secrets when SealedSecret resources are created.
 
 ---
 
