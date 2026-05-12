@@ -13,7 +13,7 @@ cnpg:
   backup:
     enabled: true
     barmanStoreName: foodmission-backup-store
-    destinationPath: s3://foodmission-production/backups/foodmission-pg
+    destinationPath: s3://foodmission-production/backups
     endpointURL: https://hel1.your-objectstorage.com
 
   scheduledBackup:
@@ -26,11 +26,11 @@ cnpg:
 
   # Define the external cluster (the backup source)
   externalClusters:
-    - name: foodmission-prod-backup-cluster
+    - name: foodmission-pg-prod
       barmanObjectStore:
         destinationPath: s3://foodmission-production/backups
         endpointURL: https://hel1.your-objectstorage.com
-        serverName: foodmission-pg-prod
+        serverName: foodmission-pg
         s3Credentials:
           accessKeyId:
             name: foodmission-secrets
