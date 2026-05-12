@@ -58,11 +58,14 @@ postgresql:
           name: foodmission-secrets
 
 # ---------------------------------------------------------------------------
-# Sealed Secrets controller (sub-chart)
+# Sealed Secrets
 # ---------------------------------------------------------------------------
+# Note: Sealed Secrets controller is installed cluster-wide in kube-system namespace
+# This chart only deploys SealedSecret resources, not the controller
+# Install once: helm install sealed-secrets sealed-secrets/sealed-secrets -n kube-system
 sealedSecrets:
-  enabled: true
-  useSealed: true  # skip plaintext secret templates (using external SealedSecrets)
+  enabled: false  # Controller is installed separately, not as subchart
+  useSealed: true  # Use SealedSecrets (applied via secrets/*.sealed.yaml)
 
 # ---------------------------------------------------------------------------
 # cert-manager ClusterIssuer (enable only on first install)
