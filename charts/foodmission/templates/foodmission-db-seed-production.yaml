@@ -54,6 +54,6 @@ spec:
                 - ALL
           envFrom:
             - secretRef:
-                name: foodmission-api-secret
+                name: {{ .Values.cnpg.secretName }}
       restartPolicy: Never
 {{- end }}

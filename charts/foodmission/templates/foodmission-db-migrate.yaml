@@ -54,7 +54,7 @@ spec:
         command: ["node", "node_modules/.bin/prisma", "migrate", "deploy"]
         envFrom:
           - secretRef:
-              name: {{ .Values.global.secretName }}
+              name: {{ .Values.cnpg.secretName }}
         env:
           - name: DATABASE_URL
             value: "postgresql://$(username):$(password)@{{ .Values.global.cnpg.clusterName }}-rw.{{ .Values.global.namespace }}.svc.cluster.local:5432/{{ .Values.global.cnpg.database }}"
