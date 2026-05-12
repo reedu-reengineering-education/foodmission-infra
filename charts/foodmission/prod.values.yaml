@@ -13,7 +13,7 @@ cnpg:
   backup:
     enabled: true
     barmanStoreName: foodmission-backup-store
-    destinationPath: s3://foodmission-production/backups/foodmission-pg-prod
+    destinationPath: s3://foodmission-production/backups/foodmission-pg
     endpointURL: https://hel1.your-objectstorage.com
 
   scheduledBackup:
@@ -30,7 +30,7 @@ cnpg:
       barmanObjectStore:
         destinationPath: s3://foodmission-production/backups
         endpointURL: https://hel1.your-objectstorage.com
-        serverName: foodmission-pg
+        serverName: foodmission-pg-prod
         s3Credentials:
           accessKeyId:
             name: foodmission-secrets
