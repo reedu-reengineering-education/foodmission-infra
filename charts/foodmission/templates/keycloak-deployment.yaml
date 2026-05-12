@@ -59,7 +59,7 @@ spec:
           capabilities:
             drop:
               - ALL
-        args: ["start", "--import-realm", "--optimized", "--spi-email-template-provider=freemarker-plus-mustache", "--spi-email-template-freemarker-plus-mustache-enabled=true", "--spi-theme-static-max-age=-1", "--spi-theme-cache-themes=false", "--spi-theme-cache-templates=false", "--hostname-strict=false"]
+        args: ["start", "--import-realm", "--spi-email-template-provider=freemarker-plus-mustache", "--spi-email-template-freemarker-plus-mustache-enabled=true", "--spi-theme-static-max-age=-1", "--spi-theme-cache-themes=false", "--spi-theme-cache-templates=false"]
         env:
           - name: KC_DB
             value: "postgres"
