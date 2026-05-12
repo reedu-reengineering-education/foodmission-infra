@@ -19,27 +19,27 @@ cnpg:
   scheduledBackup:
     enabled: true
 
-  # Bootstrap from existing backup
-  bootstrap:
-    recovery:
-      source: foodmission-pg-prod
+  # # Bootstrap from existing backup
+  # bootstrap:
+  #   recovery:
+  #     source: foodmission-pg-prod
 
-  # Define the external cluster (the backup source)
-  externalClusters:
-    - name: foodmission-pg-prod
-      barmanObjectStore:
-        destinationPath: s3://foodmission-production/backups
-        endpointURL: https://hel1.your-objectstorage.com
-        serverName: foodmission-pg
-        s3Credentials:
-          accessKeyId:
-            name: foodmission-secrets
-            key: ACCESS_KEY_ID
-          secretAccessKey:
-            name: foodmission-secrets
-            key: ACCESS_SECRET_KEY
-        wal:
-          compression: gzip
+  # # Define the external cluster (the backup source)
+  # externalClusters:
+  #   - name: foodmission-pg-prod
+  #     barmanObjectStore:
+  #       destinationPath: s3://foodmission-production/backups
+  #       endpointURL: https://hel1.your-objectstorage.com
+  #       serverName: foodmission-pg
+  #       s3Credentials:
+  #         accessKeyId:
+  #           name: foodmission-secrets
+  #           key: ACCESS_KEY_ID
+  #         secretAccessKey:
+  #           name: foodmission-secrets
+  #           key: ACCESS_SECRET_KEY
+  #       wal:
+  #         compression: gzip
 
 api:
   image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:sha-5deb1c2
