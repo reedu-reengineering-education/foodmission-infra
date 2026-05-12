@@ -48,5 +48,5 @@ api:
     enabled: "true"
 
 keycloak:
-  image: ghcr.io/reedu-reengineering-education/foodmission-keycloak:0.1.0
+  image: ghcr.io/reedu-reengineering-education/foodmission-keycloak:0.1.2
   replicaCount: 2
