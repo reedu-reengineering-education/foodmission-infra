@@ -1,0 +1,32 @@
+# Staging environment
+
+global:
+  namespace: foodmission-staging
+  environment: staging
+  cnpg:
+    clusterName: foodmission-pg-staging
+
+cnpg:
+  instances: 3
+  storageSize: 10Gi
+
+  backup:
+    enabled: true
+    barmanStoreName: foodmission-backup-store
+    destinationPath: s3://foodmission-staging/backups
+    endpointURL: https://hel1.your-objectstorage.com
+
+  scheduledBackup:
+    enabled: true
+
+api:
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:sha-d6ad3fa
+  hostname: staging.api.foodmission.eu
+  replicaCount: 3
+  opentelemetry:
+    enabled: "true"
+
+keycloak:
+  image: ghcr.io/reedu-reengineering-education/foodmission-keycloak:0.1.2
+  hostname: staging.auth.foodmission.eu
+  replicaCount: 2

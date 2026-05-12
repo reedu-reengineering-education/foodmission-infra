@@ -1,0 +1,440 @@
+# Observability Stack - Deploy Once Per Cluster
+# Monitors all environments from a single observability namespace
+
+# ============================================================================
+# Grafana Configuration
+# ============================================================================
+grafana:
+  enabled: true
+  
+  # Admin credentials (password is auto-generated)
+  # Retrieve with: kubectl get secret -n observability observability-grafana -o jsonpath='{.data.admin-password}' | base64 -d
+  adminUser: admin
+  
+  # Persistence for dashboards
+  persistence:
+    enabled: true
+    size: 10Gi
+  
+  # Ingress configuration - expose Grafana publicly
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      traefik.ingress.kubernetes.io/router.tls: "true"
+    hosts:
+      - grafana.foodmission.eu
+    path: /
+    pathType: Prefix
+    tls:
+      - secretName: grafana-tls
+        hosts:
+          - grafana.foodmission.eu
+  
+  # Datasource configuration - connects Grafana to Prometheus, Loki, and Tempo
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        # Prometheus - Metrics
+        - name: Prometheus
+          type: prometheus
+          uid: prometheus
+          orgId: 1
+          access: proxy
+          url: http://observability-prometheus-server.observability.svc.cluster.local:80
+          isDefault: true
+          jsonData:
+            timeInterval: 30s
+        
+        # Loki - Logs
+        - name: Loki
+          type: loki
+          uid: loki
+          orgId: 1
+          access: proxy
+          url: http://observability-loki.observability.svc.cluster.local:3100
+          isDefault: false
+          jsonData:
+            maxLines: 1000
+            derivedFields:
+              - datasourceUid: tempo
+                matcherRegex: "trace_id=(\\w+)"
+                name: TraceID
+                url: "${__value.raw}"
+        
+        # Tempo - Traces
+        - name: Tempo
+          type: tempo
+          uid: tempo
+          orgId: 1
+          access: proxy
+          url: http://observability-tempo.observability.svc.cluster.local:3200
+          isDefault: false
+          jsonData:
+            tracesToLogsV2:
+              datasourceUid: loki
+              spanStartTimeShift: '-1h'
+              spanEndTimeShift: '1h'
+              filterByTraceID: true
+              filterBySpanID: false
+              tags: ['job', 'instance', 'pod', 'namespace']
+            tracesToMetrics:
+              datasourceUid: prometheus
+            serviceMap:
+              datasourceUid: prometheus
+            nodeGraph:
+              enabled: true
+            lokiSearch:
+              datasourceUid: loki
+  
+  # Dashboard provisioning
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: 'default'
+          orgId: 1
+          folder: ''
+          type: file
+          disableDeletion: true
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+  
+  # Pre-configured dashboards from Grafana.com
+  dashboards:
+    default:
+      k3s:
+        gnetId: 15282
+        datasource: prometheus
+      node-exporter:
+        gnetId: 1860
+        datasource: prometheus
+      kubernetes-pods:
+        gnetId: 6417
+        datasource: prometheus
+      loki-logs:
+        gnetId: 13639
+        datasource: loki
+      tempo-traces:
+        gnetId: 16541
+        datasource: tempo
+      # NestJS API metrics (prom-client / OTLP → Prometheus)
+      nestjs-api:
+        gnetId: 11159
+        datasource: prometheus
+      # CloudNativePG database metrics
+      cnpg:
+        gnetId: 20417
+        datasource: prometheus
+      # Keycloak metrics
+      keycloak:
+        gnetId: 19659
+        datasource: prometheus
+
+# ============================================================================
+# Loki Configuration (Log Aggregation)
+# ============================================================================
+loki:
+  enabled: true
+  deploymentMode: SingleBinary
+  
+  loki:
+    auth_enabled: false
+    commonConfig:
+      replication_factor: 1
+    storage:
+      type: 'filesystem'
+    schemaConfig:
+      configs:
+        - from: 2024-01-01
+          store: tsdb
+          object_store: filesystem
+          schema: v13
+          index:
+            prefix: loki_index_
+            period: 24h
+    limits_config:
+      retention_period: 168h  # 7 days
+    server:
+      http_listen_port: 3100
+      grpc_listen_port: 9095
+  
+  singleBinary:
+    replicas: 1
+    persistence:
+      enabled: true
+      size: 10Gi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+  
+  # Disable distributed components
+  backend:
+    replicas: 0
+  read:
+    replicas: 0
+  write:
+    replicas: 0
+  gateway:
+    enabled: false
+  monitoring:
+    selfMonitoring:
+      enabled: false
+    lokiCanary:
+      enabled: false
+  lokiCanary:
+    enabled: false
+  memberlist:
+    enabled: false
+  test:
+    enabled: false
+  chunksCache:
+    enabled: false
+  resultsCache:
+    enabled: false
+
+# ============================================================================
+# Prometheus Configuration (Metrics Collection)
+# ============================================================================
+prometheus:
+  enabled: true
+  
+  server:
+    global:
+      scrape_interval: 30s
+      scrape_timeout: 10s
+      evaluation_interval: 30s
+    persistentVolume:
+      enabled: true
+      size: 50Gi  # Increase for production
+    retention: "30d"  # 30 days retention
+    
+    # Enable remote write receiver for OpenTelemetry
+    extraFlags:
+      - web.enable-remote-write-receiver
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+  
+  kubeStateMetrics:
+    enabled: true
+  nodeExporter:
+    enabled: true
+  pushgateway:
+    enabled: false
+  alertmanager:
+    enabled: false
+
+  # Annotation-based pod scraping (picks up API + Keycloak prometheus.io/scrape annotations)
+  # and explicit CNPG scraping (PodMonitor CRD is ignored without a Prometheus Operator)
+  extraScrapeConfigs: |
+    - job_name: 'kubernetes-pods-annotated'
+      kubernetes_sd_configs:
+        - role: pod
+          namespaces:
+            names: []  # Empty = all namespaces
+      relabel_configs:
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+          action: keep
+          regex: "true"
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+        - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+          action: replace
+          regex: ([^:]+)(?::\d+)?;(\d+)
+          replacement: $1:$2
+          target_label: __address__
+        - action: labelmap
+          regex: __meta_kubernetes_pod_label_(.+)
+        - source_labels: [__meta_kubernetes_namespace]
+          action: replace
+          target_label: namespace
+        - source_labels: [__meta_kubernetes_pod_name]
+          action: replace
+          target_label: pod
+    - job_name: 'cnpg-metrics'
+      kubernetes_sd_configs:
+        - role: pod
+          namespaces:
+            names: []  # Empty = all namespaces
+      relabel_configs:
+        - source_labels: [__meta_kubernetes_pod_label_cnpg_io_cluster]
+          action: keep
+          regex: .+
+        - source_labels: [__address__]
+          action: replace
+          regex: ([^:]+)(?::\d+)?
+          replacement: $1:9187
+          target_label: __address__
+        - source_labels: [__meta_kubernetes_namespace]
+          action: replace
+          target_label: namespace
+        - source_labels: [__meta_kubernetes_pod_name]
+          action: replace
+          target_label: pod
+        - source_labels: [__meta_kubernetes_pod_label_cnpg_io_cluster]
+          action: replace
+          target_label: cluster
+
+  # Fix: exclude virtual/overlay filesystems so node FS size is not inflated
+  prometheus-node-exporter:
+    extraArgs:
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+|run/containerd/.+|var/lib/rancher/.+)($|/)
+      - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$
+    hostRootFsMount:
+      mountPropagation: HostToContainer
+
+# ============================================================================
+# Tempo Configuration (Distributed Tracing)
+# ============================================================================
+tempo:
+  enabled: true
+  deploymentMode: SingleBinary
+  
+  tempo:
+    reportingEnabled: false
+    metricsGenerator:
+      enabled: true
+      remoteWriteUrl: "http://observability-prometheus-server.observability.svc.cluster.local:80/api/v1/write"
+    storage:
+      trace:
+        backend: local
+        local:
+          path: /var/tempo/traces
+        wal:
+          path: /var/tempo/wal
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+          grpc:
+            endpoint: 0.0.0.0:4317
+    retention: 168h  # 7 days
+    global_overrides:
+      max_bytes_per_trace: 5000000
+  
+  singleBinary:
+    replicas: 1
+    persistence:
+      enabled: true
+      size: 20Gi  # Increase for production
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+  
+  # Disable distributed components
+  distributor:
+    replicas: 0
+  ingester:
+    replicas: 0
+  compactor:
+    replicas: 0
+  querier:
+    replicas: 0
+  queryFrontend:
+    replicas: 0
+  metrics-generator:
+    replicas: 0
+  service:
+    type: ClusterIP
+  gateway:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+  test:
+    enabled: false
+
+# ============================================================================
+# OpenTelemetry Collector Configuration (Telemetry Pipeline)
+# ============================================================================
+opentelemetry-collector:
+  enabled: true
+  mode: deployment
+  
+  image:
+    repository: "otel/opentelemetry-collector-contrib"
+  
+  presets:
+    clusterMetrics:
+      enabled: true
+    logsCollection:
+      enabled: false  # Avoid duplicate plain-text logs
+  
+  config:
+    processors:
+      batch:
+        timeout: 10s
+        send_batch_size: 1024
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 512
+      resource:
+        attributes:
+          - key: service.namespace
+            value: observability
+            action: insert
+      attributes/logs:
+        actions:
+          - key: log.source
+            value: "otlp"
+            action: insert
+    
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    
+    exporters:
+      debug:
+        verbosity: detailed
+        sampling_initial: 5
+        sampling_thereafter: 200
+      otlphttp/loki:
+        endpoint: http://observability-loki.observability.svc.cluster.local:3100/otlp
+        tls:
+          insecure: true
+      otlp/tempo:
+        endpoint: observability-tempo.observability.svc.cluster.local:4317
+        tls:
+          insecure: true
+      prometheusremotewrite:
+        endpoint: http://observability-prometheus-server.observability.svc.cluster.local:80/api/v1/write
+        tls:
+          insecure: true
+    
+    service:
+      pipelines:
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, attributes/logs, batch, resource]
+          exporters: [debug, otlphttp/loki]
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, batch, resource]
+          exporters: [prometheusremotewrite]
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch, resource]
+          exporters: [otlp/tempo]

@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: foodmission
+  namespace: argocd
+spec:
+  description: FoodMission infrastructure
+
+  sourceRepos:
+    - git@github.com:reedu-reengineering-education/foodmission-infra.git
+
+  destinations:
+    - namespace: foodmission-test
+      server: https://kubernetes.default.svc
+    - namespace: foodmission-staging
+      server: https://kubernetes.default.svc
+    - namespace: foodmission-prod
+      server: https://kubernetes.default.svc
+    - namespace: observability
+      server: https://kubernetes.default.svc
+
+  # Allow creating cluster-wide resources (Namespace, ClusterIssuer)
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: cert-manager.io
+      kind: ClusterIssuer

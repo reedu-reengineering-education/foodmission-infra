@@ -1,0 +1,11 @@
+apiVersion: v2
+name: foodmission
+version: 0.1.0
+description: FoodMission — API, Keycloak, and PostgreSQL (CNPG)
+appVersion: "1.0.0"
+
+dependencies:
+  - name: sealed-secrets
+    version: "2.17.3"
+    repository: https://bitnami-labs.github.io/sealed-secrets
+    condition: sealedSecrets.enabled

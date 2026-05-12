@@ -1,0 +1,43 @@
+# Test environment
+
+global:
+  namespace: foodmission-test
+  environment: test
+  tlsSecret: foodmission-tls-cert-test
+  cnpg:
+    clusterName: foodmission-pg-test
+
+cnpg:
+  instances: 1
+  storageSize: 5Gi
+  monitoring: false
+
+  # Bootstrap from staging backup (uncomment when needed, then re-comment after restore)
+  # bootstrap:
+  #   recovery:
+  #     source: staging-cluster
+  # externalClusters:
+  #   - name: staging-cluster
+  #     barmanObjectStore:
+  #       destinationPath: s3://foodmission-staging/backups
+  #       endpointURL: https://hel1.your-objectstorage.com
+  #       s3Credentials:
+  #         accessKeyId:
+  #           name: foodmission-pg-s3-credentials
+  #           key: ACCESS_KEY_ID
+  #         secretAccessKey:
+  #           name: foodmission-pg-s3-credentials
+  #           key: ACCESS_SECRET_KEY
+  #       wal:
+  #         compression: gzip
+
+api:
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:sha-5deb1c2
+  hostname: test.api.foodmission.eu
+  replicaCount: 1
+  logging:
+    level: debug
+
+keycloak:
+  image: ghcr.io/reedu-reengineering-education/foodmission-keycloak:0.1.2
+  hostname: test.auth.foodmission.eu

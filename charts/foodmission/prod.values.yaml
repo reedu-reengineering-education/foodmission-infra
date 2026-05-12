@@ -1,0 +1,30 @@
+# Production environment
+
+global:
+  namespace: foodmission-prod
+  tlsSecret: foodmission-tls-cert-prod
+  cnpg:
+    clusterName: foodmission-pg-prod
+
+cnpg:
+  instances: 3
+  storageSize: 50Gi
+
+  backup:
+    enabled: true
+    barmanStoreName: foodmission-backup-store
+    destinationPath: s3://foodmission-production/backups
+    endpointURL: https://hel1.your-objectstorage.com
+
+  scheduledBackup:
+    enabled: true
+
+api:
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:sha-5deb1c2
+  replicaCount: 3
+  opentelemetry:
+    enabled: "true"
+
+keycloak:
+  image: ghcr.io/reedu-reengineering-education/foodmission-keycloak:0.1.0
+  replicaCount: 2

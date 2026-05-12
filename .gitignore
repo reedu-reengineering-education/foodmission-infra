@@ -1,0 +1,10 @@
+# Helm vendored dependencies (run `helm dep build` locally, not committed)
+# Only ignores the /charts subfolder *inside* each chart, not the top-level charts/ directory
+charts/*/charts/
+charts/*/Chart.lock
+Chart.lock
+*.tgz
+
+# Never commit files with real secrets
+# Safe to commit: values.yaml, values-staging.yaml, values-prod.yaml (use CHANGEME)
+# When using Sealed Secrets: commit SealedSecret YAML files instead

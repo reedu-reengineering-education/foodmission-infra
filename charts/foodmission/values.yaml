@@ -1,0 +1,98 @@
+# FoodMission — default values
+# Override per environment in values-test.yaml / values-staging.yaml / values-prod.yaml
+# Secrets are managed via SealedSecrets (see secrets/*.plain.yaml)
+
+# ---------------------------------------------------------------------------
+# Global
+# ---------------------------------------------------------------------------
+global:
+  namespace: foodmission
+  environment: production
+  tlsSecret: foodmission-tls-cert
+  cnpg:
+    clusterName: foodmission-pg
+    database: foodmission
+    owner: foodmission_user
+
+# ---------------------------------------------------------------------------
+# CloudNativePG (PostgreSQL)
+# ---------------------------------------------------------------------------
+cnpg:
+  enabled: true
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.3
+  secretName: foodmission-secrets
+  storageSize: 10Gi
+  storageClass: ""
+  additionalDatabases:
+    - name: keycloak
+  monitoring: true
+
+  backup:
+    enabled: false
+    barmanStoreName: foodmission-backup-store
+    destinationPath: ""
+    s3Secret: foodmission-secrets
+    endpointURL: ""
+    retentionPolicy: 30d
+
+  scheduledBackup:
+    enabled: false
+    schedule: "0 0 2 * * *"
+
+# ---------------------------------------------------------------------------
+# Sealed Secrets controller (sub-chart)
+# ---------------------------------------------------------------------------
+sealedSecrets:
+  enabled: true
+  useSealed: true  # skip plaintext secret templates (using external SealedSecrets)
+
+# ---------------------------------------------------------------------------
+# cert-manager ClusterIssuer (enable only on first install)
+# ---------------------------------------------------------------------------
+clusterIssuer:
+  enabled: false
+  email: admin@foodmission.eu
+  server: https://acme-v02.api.letsencrypt.org/directory
+
+# ---------------------------------------------------------------------------
+# API
+# ---------------------------------------------------------------------------
+api:
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:latest
+  hostname: api.foodmission.eu
+  replicaCount: 2
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+
+  logging:
+    level: info
+    console: "true"
+    file: "true"
+
+  opentelemetry:
+    enabled: "false"
+    endpoint: http://observability-opentelemetry-collector.observability.svc.cluster.local:4318
+
+# ---------------------------------------------------------------------------
+# Keycloak
+# ---------------------------------------------------------------------------
+keycloak:
+  image: ghcr.io/reedu-reengineering-education/foodmission-keycloak:main
+  hostname: auth.foodmission.eu
+  replicaCount: 1
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+  admin:
+    user: admin
