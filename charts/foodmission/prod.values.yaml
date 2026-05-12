@@ -28,8 +28,9 @@ cnpg:
   externalClusters:
     - name: foodmission-prod-backup-cluster
       barmanObjectStore:
-        destinationPath: s3://foodmission-production/backups/foodmission-pg
+        destinationPath: s3://foodmission-production/backups
         endpointURL: https://hel1.your-objectstorage.com
+        serverName: foodmission-pg
         s3Credentials:
           accessKeyId:
             name: foodmission-secrets
