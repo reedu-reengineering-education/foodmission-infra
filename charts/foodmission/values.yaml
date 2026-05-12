@@ -1,6 +1,6 @@
 # FOODMISSION — default values
 # Override per environment in values-test.yaml / values-staging.yaml / values-prod.yaml
-# Secrets are managed via SealedSecrets (see secrets/*.plain.yaml)
+# Secrets are managed via SealedSecrets (see secrets/*.sealed.yaml)
 
 # ---------------------------------------------------------------------------
 # Global
@@ -56,16 +56,6 @@ postgresql:
         superuser: false
         passwordSecret:
           name: foodmission-secrets
-
-# ---------------------------------------------------------------------------
-# Sealed Secrets
-# ---------------------------------------------------------------------------
-# Note: Sealed Secrets controller is installed cluster-wide in kube-system namespace
-# This chart only deploys SealedSecret resources, not the controller
-# Install once: helm install sealed-secrets sealed-secrets/sealed-secrets -n kube-system
-sealedSecrets:
-  enabled: false  # Controller is installed separately, not as subchart
-  useSealed: true  # Use SealedSecrets (applied via secrets/*.sealed.yaml)
 
 # ---------------------------------------------------------------------------
 # cert-manager ClusterIssuer (enable only on first install)
