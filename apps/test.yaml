@@ -8,7 +8,7 @@ spec:
 
   sources:
     # Helm chart
-    - repoURL: git@github.com:reedu-reengineering-education/foodmission-infra.git
+    - repoURL: https://github.com/reedu-reengineering-education/foodmission-infra.git
       targetRevision: main
       path: charts/foodmission
       helm:
@@ -16,7 +16,7 @@ spec:
           - values.yaml
           - test.values.yaml
     # SealedSecrets
-    - repoURL: git@github.com:reedu-reengineering-education/foodmission-infra.git
+    - repoURL: https://github.com/reedu-reengineering-education/foodmission-infra.git
       targetRevision: main
       path: secrets
       directory:

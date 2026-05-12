@@ -7,7 +7,7 @@ spec:
   description: FoodMission infrastructure
 
   sourceRepos:
-    - git@github.com:reedu-reengineering-education/foodmission-infra.git
+    - https://github.com/reedu-reengineering-education/foodmission-infra.git
 
   destinations:
     - namespace: foodmission-test
