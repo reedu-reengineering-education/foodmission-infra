@@ -12,7 +12,7 @@ metadata:
   annotations:
     meta.helm.sh/release-name: {{ .Release.Name }}
     meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    description: "FoodMission API service"
+    description: "FOODMISSION API service"
 spec:
   selector:
     app.kubernetes.io/name: {{ .Release.Name }}

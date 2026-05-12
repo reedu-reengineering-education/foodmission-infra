@@ -4,7 +4,7 @@ metadata:
   name: foodmission
   namespace: argocd
 spec:
-  description: FoodMission infrastructure
+  description: FOODMISSION infrastructure
 
   sourceRepos:
     - https://github.com/reedu-reengineering-education/foodmission-infra.git

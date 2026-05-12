@@ -15,5 +15,5 @@ metadata:
   annotations:
     meta.helm.sh/release-name: {{ .Release.Name }}
     meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    description: "FoodMission application namespace"
+    description: "FOODMISSION application namespace"
 {{- end }}

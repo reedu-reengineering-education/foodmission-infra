@@ -1,7 +1,7 @@
 apiVersion: v2
 name: foodmission
 version: 0.1.0
-description: FoodMission — API, Keycloak, and PostgreSQL (CNPG)
+description: FOODMISSION — API, Keycloak, and PostgreSQL (CNPG)
 appVersion: "1.0.0"
 
 dependencies:

@@ -1,4 +1,4 @@
-# FoodMission — default values
+# FOODMISSION — default values
 # Override per environment in values-test.yaml / values-staging.yaml / values-prod.yaml
 # Secrets are managed via SealedSecrets (see secrets/*.plain.yaml)
 

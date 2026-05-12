@@ -13,7 +13,7 @@ metadata:
   annotations:
     meta.helm.sh/release-name: {{ .Release.Name }}
     meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    description: "CloudNativePG PostgreSQL cluster for FoodMission"
+    description: "CloudNativePG PostgreSQL cluster for FOODMISSION"
     helm.sh/resource-policy: keep
 spec:
   instances: {{ .Values.cnpg.instances }}
