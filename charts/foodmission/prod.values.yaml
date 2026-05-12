@@ -30,7 +30,7 @@ cnpg:
   #     barmanObjectStore:
   #       destinationPath: s3://foodmission-production/backups
   #       endpointURL: https://hel1.your-objectstorage.com
-  #       serverName: foodmission-pg
+  #       serverName: foodmission-pg # new one is foodmission-pg-prod
   #       s3Credentials:
   #         accessKeyId:
   #           name: foodmission-secrets
