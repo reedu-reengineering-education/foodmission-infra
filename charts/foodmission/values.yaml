@@ -24,8 +24,6 @@ cnpg:
   secretName: foodmission-secrets
   storageSize: 10Gi
   storageClass: ""
-  additionalDatabases:
-    - name: keycloak
   monitoring: true
 
   backup:
@@ -39,6 +37,25 @@ cnpg:
   scheduledBackup:
     enabled: false
     schedule: "0 0 2 * * *"
+
+# ---------------------------------------------------------------------------
+# PostgreSQL managed databases and roles (used by cnpg-cluster & Database CRDs)
+# ---------------------------------------------------------------------------
+postgresql:
+  managed:
+    databases:
+      - name: foodmission
+        owner: foodmission_user
+        ensure: present
+      - name: keycloak
+        owner: foodmission_user
+        ensure: present
+    roles:
+      - name: foodmission_user
+        login: true
+        superuser: false
+        passwordSecret:
+          name: foodmission-secrets
 
 # ---------------------------------------------------------------------------
 # Sealed Secrets controller (sub-chart)

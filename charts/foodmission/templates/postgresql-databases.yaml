@@ -1,0 +1,19 @@
+{{- if .Values.cnpg.enabled }}
+{{- $clusterName := .Values.global.cnpg.clusterName }}
+{{- $namespace := .Values.global.namespace }}
+{{- range .Values.postgresql.managed.databases }}
+{{- if ne (default "" .ensure) "absent" }}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: {{ .name }}
+  namespace: {{ $namespace }}
+spec:
+  name: {{ .name }}
+  owner: {{ .owner }}
+  cluster:
+    name: {{ $clusterName }}
+{{- end }}
+{{- end }}
+{{- end }}

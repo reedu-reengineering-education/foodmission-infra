@@ -65,24 +65,11 @@ spec:
         name: {{ .Values.cnpg.secretName }}
     {{- end }}
   
-  # Managed roles and databases — CNPG reconciles these on every loop,
+  # Managed roles — CNPG reconciles these on every loop,
   # works after fresh install AND after a restore from backup.
   managed:
-    databases:
-      - name: {{ .Values.global.cnpg.database }}
-        owner: {{ .Values.global.cnpg.owner }}
-        ensure: present
-      {{- range .Values.cnpg.additionalDatabases }}
-      - name: {{ .name }}
-        owner: {{ $.Values.global.cnpg.owner }}
-        ensure: present
-      {{- end }}
     roles:
-      - name: {{ .Values.global.cnpg.owner }}
-        login: true
-        superuser: false
-        passwordSecret:
-          name: {{ .Values.cnpg.secretName }}
+      {{- toYaml .Values.postgresql.managed.roles | nindent 6 }}
 
   {{- if .Values.cnpg.externalClusters }}
   externalClusters:
