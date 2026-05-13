@@ -18,6 +18,8 @@ spec:
       server: https://kubernetes.default.svc
     - namespace: observability
       server: https://kubernetes.default.svc
+    - namespace: foodmission-pr-*
+      server: https://kubernetes.default.svc
 
   # Allow creating cluster-wide resources (Namespace, ClusterIssuer, RBAC, CRDs)
   clusterResourceWhitelist:
