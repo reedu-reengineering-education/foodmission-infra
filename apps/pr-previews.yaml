@@ -19,6 +19,8 @@ spec:
   template:
     metadata:
       name: "foodmission-pr-{{number}}"
+      annotations:
+        notifications.argoproj.io/subscribe.on-preview-ready.github: ""
     spec:
       project: foodmission
       sources:
@@ -55,7 +57,7 @@ spec:
                 value: "false"
         # Cluster-wide sealed secret (works in any namespace)
         - repoURL: https://github.com/reedu-reengineering-education/foodmission-infra.git
-          targetRevision: main
+          targetRevision: "{{head_sha}}"
           path: secrets
           directory:
             include: 'preview.sealed.yaml'
