@@ -71,6 +71,7 @@ clusterIssuer:
 api:
   image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:latest
   hostname: api.foodmission.eu
+  extraEnv: []  # additional env vars to override sealed secret values (e.g. for PR previews)
   replicaCount: 2
 
   resources:

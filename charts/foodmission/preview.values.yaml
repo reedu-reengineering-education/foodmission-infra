@@ -1,0 +1,23 @@
+# PR preview environment
+# Hostnames, namespace, and clusterName are injected via ApplicationSet parameters.
+
+global:
+  environment: preview
+
+cnpg:
+  instances: 1
+  storageSize: 1Gi
+  monitoring: false
+  backup:
+    enabled: false
+  scheduledBackup:
+    enabled: false
+
+api:
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:sha-d6ad3fa
+  replicaCount: 1
+  logging:
+    level: debug
+
+keycloak:
+  image: ghcr.io/reedu-reengineering-education/foodmission-keycloak:0.1.2

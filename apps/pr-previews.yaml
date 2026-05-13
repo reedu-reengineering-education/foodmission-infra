@@ -1,0 +1,70 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: foodmission-pr-preview
+  namespace: argocd
+spec:
+  generators:
+    - pullRequest:
+        github:
+          owner: reedu-reengineering-education
+          repo: foodmission-infra        # or the app repo if separate
+          tokenRef:
+            secretName: github-token
+            key: token
+          labels:
+            - preview                    # only PRs with this label get a preview
+        requeueAfterSeconds: 60
+
+  template:
+    metadata:
+      name: "foodmission-pr-{{number}}"
+    spec:
+      project: foodmission
+      sources:
+        # Helm chart at the PR's HEAD
+        - repoURL: https://github.com/reedu-reengineering-education/foodmission-infra.git
+          targetRevision: "{{head_sha}}"
+          path: charts/foodmission
+          helm:
+            valueFiles:
+              - values.yaml
+              - preview.values.yaml
+            parameters:
+              - name: global.namespace
+                value: "foodmission-pr-{{number}}"
+              - name: api.hostname
+                value: "pr-{{number}}.api.foodmission.eu"
+              - name: keycloak.hostname
+                value: "pr-{{number}}.auth.foodmission.eu"
+              - name: global.tlsSecret
+                value: "foodmission-tls-cert-pr-{{number}}"
+              # Override the dynamic Keycloak URLs (can't be sealed per-namespace)
+              - name: api.extraEnv[0].name
+                value: "KEYCLOAK_BASE_URL"
+              - name: api.extraEnv[0].value
+                value: "https://pr-{{number}}.auth.foodmission.eu"
+              - name: api.extraEnv[1].name
+                value: "KEYCLOAK_REDIRECT_URI"
+              - name: api.extraEnv[1].value
+                value: "https://pr-{{number}}.api.foodmission.eu/auth/callback"
+              # Each preview gets its own lightweight CNPG cluster
+              - name: global.cnpg.clusterName
+                value: "foodmission-pg-pr-{{number}}"
+              - name: sealedSecrets.enabled
+                value: "false"
+        # Cluster-wide sealed secret (works in any namespace)
+        - repoURL: https://github.com/reedu-reengineering-education/foodmission-infra.git
+          targetRevision: main
+          path: secrets
+          directory:
+            include: 'preview.sealed.yaml'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "foodmission-pr-{{number}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

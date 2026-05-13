@@ -89,3 +89,7 @@ spec:
           # Constructed URLs (password comes from secret, host from Helm values)
           - name: DATABASE_URL
             value: "postgresql://$(username):$(password)@{{ .Values.global.cnpg.clusterName }}-rw.{{ .Values.global.namespace }}.svc.cluster.local:5432/{{ .Values.global.cnpg.database }}"
+          {{- range .Values.api.extraEnv }}
+          - name: {{ .name }}
+            value: {{ .value | quote }}
+          {{- end }}
