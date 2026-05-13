@@ -19,8 +19,6 @@ spec:
   template:
     metadata:
       name: "foodmission-pr-{{number}}"
-      annotations:
-        notifications.argoproj.io/subscribe.on-preview-ready.github: ""
     spec:
       project: foodmission
       sources:
