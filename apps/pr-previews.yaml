@@ -55,7 +55,7 @@ spec:
                 value: "false"
         # Cluster-wide sealed secret (works in any namespace)
         - repoURL: https://github.com/reedu-reengineering-education/foodmission-infra.git
-          targetRevision: "{{head_sha}}"
+          targetRevision: main
           path: secrets
           directory:
             include: 'preview.sealed.yaml'
