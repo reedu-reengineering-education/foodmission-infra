@@ -60,9 +60,10 @@ grafana:
             maxLines: 1000
             derivedFields:
               - datasourceUid: tempo
-                matcherRegex: "trace_id=(\\w+)"
+                matcherRegex: "trace[_]?id"
+                matcherType: label
                 name: TraceID
-                url: "${__value.raw}"
+                url: "$${__value.raw}"
         
         # Tempo - Traces
         - name: Tempo
@@ -75,11 +76,11 @@ grafana:
           jsonData:
             tracesToLogsV2:
               datasourceUid: loki
-              spanStartTimeShift: '-1h'
-              spanEndTimeShift: '1h'
+              spanStartTimeShift: '-2s'
+              spanEndTimeShift: '2s'
               filterByTraceID: true
               filterBySpanID: false
-              tags: ['job', 'instance', 'pod', 'namespace']
+              tags: ['service.name', 'service.namespace']
             tracesToMetrics:
               datasourceUid: prometheus
             serviceMap:
@@ -387,6 +388,14 @@ opentelemetry-collector:
       memory_limiter:
         check_interval: 1s
         limit_mib: 512
+      filter/drop_probe_and_health_logs:
+        error_mode: ignore
+        logs:
+          log_record:
+            - 'IsMatch(attributes["url"], "^/api/v1/health/(live|ready)$")'
+            - 'IsMatch(attributes["route"], "^/api/v1/health/(live|ready)$")'
+            - 'IsMatch(attributes["user_agent"], "^kube-probe/")'
+            - 'IsMatch(attributes["user_agent"], "^Prometheus/")'
       resource:
         attributes:
           - key: service.namespace
@@ -428,7 +437,7 @@ opentelemetry-collector:
       pipelines:
         logs:
           receivers: [otlp]
-          processors: [memory_limiter, attributes/logs, batch, resource]
+          processors: [memory_limiter, filter/drop_probe_and_health_logs, attributes/logs, batch, resource]
           exporters: [debug, otlphttp/loki]
         metrics:
           receivers: [otlp]
