@@ -44,7 +44,8 @@ spec:
         - name: seed
           image: {{ .Values.api.image }}
           imagePullPolicy: Always
-          command: ['sh', '-c', 'npm run db:seed']
+          command: ['sh', '-c', 'npm run db:seed:prod']
+          
           securityContext:
             allowPrivilegeEscalation: false
             runAsNonRoot: true
@@ -55,5 +56,8 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ .Values.cnpg.secretName }}
+          env:
+            - name: DATABASE_URL
+              value: "postgresql://$(username):$(password)@{{ .Values.global.cnpg.clusterName }}-rw.{{ .Values.global.namespace }}.svc.cluster.local:5432/{{ .Values.global.cnpg.database }}"
       restartPolicy: Never
 {{- end }}
