@@ -93,3 +93,14 @@ spec:
           - name: {{ .name }}
             value: {{ .value | quote }}
           {{- end }}
+          # OpenTelemetry
+          - name: OTEL_LOGS_ENABLED
+            value: {{ .Values.api.opentelemetry.enabled | quote }}
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: {{ .Values.api.opentelemetry.endpoint | quote }}
+          - name: OTEL_SERVICE_NAME
+            value: {{ .Values.api.opentelemetry.serviceName | default "foodmission-api" | quote }}
+          - name: OTEL_SERVICE_NAMESPACE
+            value: {{ .Values.global.namespace | quote }}
+          - name: OTEL_SERVICE_VERSION
+            value: {{ .Values.api.image | splitList ":" | last | quote }}
