@@ -60,10 +60,10 @@ grafana:
             maxLines: 1000
             derivedFields:
               - datasourceUid: tempo
-                matcherRegex: "trace[_]?id"
+                matcherRegex: "trace_id"
                 matcherType: label
                 name: TraceID
-                url: "$${__value.raw}"
+                url: ""
         
         # Tempo - Traces
         - name: Tempo
@@ -80,7 +80,6 @@ grafana:
               spanEndTimeShift: '2s'
               filterByTraceID: true
               filterBySpanID: false
-              tags: ['service.name', 'service.namespace']
             tracesToMetrics:
               datasourceUid: prometheus
             serviceMap:
