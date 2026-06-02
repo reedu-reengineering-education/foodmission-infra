@@ -14,7 +14,7 @@ cnpg:
     enabled: false
 
 api:
-  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:pr-213
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:sha-fb79f8c
   replicaCount: 1
   logging:
     level: debug
