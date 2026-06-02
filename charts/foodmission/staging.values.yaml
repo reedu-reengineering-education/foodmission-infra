@@ -43,7 +43,7 @@ cnpg:
   #         compression: gzip
 
 api:
-  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:0.1.6
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:0.1.7
   hostname: staging.api.foodmission.eu
   replicaCount: 3
   opentelemetry:
@@ -53,3 +53,6 @@ keycloak:
   image: ghcr.io/reedu-reengineering-education/foodmission-keycloak:0.1.2
   hostname: staging.auth.foodmission.eu
   replicaCount: 2
+
+valkey:
+  enabled: true

@@ -42,7 +42,7 @@ cnpg:
   #         compression: gzip
 
 api:
-  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:0.1.6
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:0.1.7
   replicaCount: 3
   opentelemetry:
     enabled: "true"
@@ -50,3 +50,6 @@ api:
 keycloak:
   image: ghcr.io/reedu-reengineering-education/foodmission-keycloak:0.1.2
   replicaCount: 2
+
+valkey:
+  enabled: true
