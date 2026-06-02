@@ -32,12 +32,15 @@ cnpg:
   #         compression: gzip
 
 api:
-  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:0.1.6
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:pr-218
   hostname: test.api.foodmission.eu
-  replicaCount: 1
+  replicaCount: 2
   logging:
     level: debug
 
 keycloak:
   image: ghcr.io/reedu-reengineering-education/foodmission-keycloak:0.1.2
   hostname: test.auth.foodmission.eu
+
+valkey:
+  enabled: true

@@ -104,3 +104,7 @@ spec:
             value: {{ .Values.global.namespace | quote }}
           - name: OTEL_SERVICE_VERSION
             value: {{ .Values.api.image | splitList ":" | last | quote }}
+          {{- if .Values.valkey.enabled }}
+          - name: REDIS_URL
+            value: "redis://{{ .Release.Name }}-valkey-master.{{ .Values.global.namespace }}.svc.cluster.local:6379"
+          {{- end }}
