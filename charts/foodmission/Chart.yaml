@@ -6,3 +6,9 @@ appVersion: "1.0.0"
 
 # Note: sealed-secrets is installed cluster-wide, not as a subchart dependency
 # Install once: helm install sealed-secrets sealed-secrets/sealed-secrets -n kube-system
+
+dependencies:
+  - name: valkey
+    version: "6.0.4"
+    repository: https://charts.bitnami.com/bitnami
+    condition: valkey.enabled

@@ -107,3 +107,21 @@ keycloak:
 
   admin:
     user: admin
+
+# ---------------------------------------------------------------------------
+# Valkey (Redis-compatible cache, Valkey is the MIT-licensed Redis successor)
+# ---------------------------------------------------------------------------
+valkey:
+  enabled: false
+  architecture: standalone
+  auth:
+    enabled: false
+  primary:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 32Mi
+      limits:
+        memory: 128Mi
+    persistence:
+      enabled: false
