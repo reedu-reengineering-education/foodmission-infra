@@ -41,6 +41,3 @@ api:
 keycloak:
   image: ghcr.io/reedu-reengineering-education/foodmission-keycloak:0.1.2
   hostname: test.auth.foodmission.eu
-
-valkey:
-  enabled: true
