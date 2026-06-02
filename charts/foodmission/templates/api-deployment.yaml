@@ -106,5 +106,5 @@ spec:
             value: {{ .Values.api.image | splitList ":" | last | quote }}
           {{- if .Values.valkey.enabled }}
           - name: REDIS_URL
-            value: "redis://{{ .Release.Name }}-valkey-master.{{ .Values.global.namespace }}.svc.cluster.local:6379"
+            value: "redis://{{ .Release.Name }}-valkey-primary.{{ .Release.Namespace }}.svc.cluster.local:6379"
           {{- end }}
