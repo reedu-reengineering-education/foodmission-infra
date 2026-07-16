@@ -42,7 +42,7 @@ cnpg:
   #         compression: gzip
 
 api:
-  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:0.1.7
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:0.1.8
   replicaCount: 3
   opentelemetry:
     enabled: "true"
