@@ -75,7 +75,7 @@ Install the sealed-secrets controller once for the entire cluster:
 
 ```bash
 # Add the Helm repository
-helm repo add sealed-secrets https://bitnami-labs.github.io/sealed-secrets
+helm repo add sealed-secrets https://bitnami.github.io/sealed-secrets
 helm repo update
 
 # Install cluster-wide controller
