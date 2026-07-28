@@ -14,8 +14,13 @@ cnpg:
     enabled: false
 
 api:
-  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:0.1.6
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:0.1.9
   replicaCount: 1
+  extraEnv:
+    - name: MONGODB_OFF_URL
+      value: "mongodb://admin:TestPassword123@mongodb-service.off-test.svc.cluster.local:27017/?authSource=admin"
+  translations:
+    enabled: true
   logging:
     level: debug
 

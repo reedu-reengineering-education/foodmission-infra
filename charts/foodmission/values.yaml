@@ -74,6 +74,9 @@ api:
   extraEnv: []  # additional env vars to override sealed secret values (e.g. for PR previews)
   replicaCount: 2
 
+  translations:
+    enabled: false  # runs `npm run db:translations` as a post-upgrade hook job; enable per-env
+
   resources:
     requests:
       cpu: 100m
