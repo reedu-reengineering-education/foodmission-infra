@@ -8,7 +8,7 @@ global:
     clusterName: foodmission-pg-test
 
 cnpg:
-  instances: 1
+  instances: 2
   storageSize: 5Gi
   monitoring: false
 
@@ -32,9 +32,14 @@ cnpg:
   #         compression: gzip
 
 api:
-  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:0.1.8
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:0.2.0
   hostname: test.api.foodmission.eu
   replicaCount: 2
+  extraEnv:
+    - name: MONGODB_OFF_URL
+      value: "mongodb://admin:TestPassword123@mongodb-service.off-test.svc.cluster.local:27017/?authSource=admin"
+  translations:
+    enabled: true
   logging:
     level: debug
 

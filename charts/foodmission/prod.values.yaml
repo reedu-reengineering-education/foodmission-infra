@@ -7,7 +7,7 @@ global:
     clusterName: foodmission-pg-prod
 
 cnpg:
-  instances: 3
+  instances: 5
   storageSize: 50Gi
 
   backup:

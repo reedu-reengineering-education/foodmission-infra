@@ -1,0 +1,67 @@
+{{- if and .Values.global.cnpg .Values.api.translations.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-db-translations
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/component: db-translations
+    app.kubernetes.io/part-of: foodmission
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    environment: {{ .Values.global.environment }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+    description: "Database translations job"
+    'helm.sh/hook': post-install,post-upgrade
+    'helm.sh/hook-weight': '-3'
+    'helm.sh/hook-delete-policy': before-hook-creation
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}
+        app.kubernetes.io/component: db-translations
+        app.kubernetes.io/part-of: foodmission
+        environment: {{ .Values.global.environment }}
+    spec:
+      initContainers:
+      # Wait for database to be ready
+      - name: wait-for-db
+        image: postgres:16-alpine
+        command:
+          - sh
+          - -c
+          - |
+            until pg_isready -h {{ .Values.global.cnpg.clusterName }}-rw.{{ .Values.global.namespace }}.svc.cluster.local -p 5432 -U {{ .Values.global.cnpg.owner }}; do
+              echo "Waiting for database to be ready..."
+              sleep 5
+            done
+            echo "Database is ready!"
+      containers:
+        - name: translations
+          image: {{ .Values.api.image }}
+          imagePullPolicy: Always
+          command: ['sh', '-c', 'npm run db:translations']
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop:
+                - ALL
+          envFrom:
+            - secretRef:
+                name: {{ .Values.cnpg.secretName }}
+          env:
+            - name: DATABASE_URL
+              value: "postgresql://$(username):$(password)@{{ .Values.global.cnpg.clusterName }}-rw.{{ .Values.global.namespace }}.svc.cluster.local:5432/{{ .Values.global.cnpg.database }}"
+            {{- range .Values.api.extraEnv }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+      restartPolicy: Never
+{{- end }}
