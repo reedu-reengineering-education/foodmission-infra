@@ -44,7 +44,7 @@ spec:
         - name: translations
           image: {{ .Values.api.image }}
           imagePullPolicy: Always
-          command: ['sh', '-c', 'npm run db:translations']
+          command: ['sh', '-c', 'npm run db:translations:prod']
 
           securityContext:
             allowPrivilegeEscalation: false
