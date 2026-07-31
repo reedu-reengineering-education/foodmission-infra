@@ -42,7 +42,7 @@ cnpg:
   #         compression: gzip
 
 api:
-  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:0.2.1
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:0.2.2
   replicaCount: 3
   extraEnv:
     - name: MONGODB_OFF_URL
