@@ -213,7 +213,7 @@ prometheus:
       evaluation_interval: 30s
     persistentVolume:
       enabled: true
-      size: 50Gi  # Increase for production
+      size: 100Gi  # Increase for production
     retention: "30d"  # 30 days retention
     
     # Enable remote write receiver for OpenTelemetry
