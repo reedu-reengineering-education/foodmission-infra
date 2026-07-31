@@ -43,9 +43,14 @@ cnpg:
   #         compression: gzip
 
 api:
-  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:0.1.8
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:0.2.1
   hostname: staging.api.foodmission.eu
   replicaCount: 3
+  extraEnv:
+    - name: MONGODB_OFF_URL
+      value: "mongodb://admin:TestPassword123@mongodb-service.off-test.svc.cluster.local:27017/?authSource=admin"
+  translations:
+    enabled: true
   opentelemetry:
     enabled: "true"
 
