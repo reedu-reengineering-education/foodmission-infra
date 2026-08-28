@@ -8,3 +8,5 @@ Chart.lock
 # Never commit files with real secrets
 # Safe to commit: values.yaml, values-staging.yaml, values-prod.yaml (use CHANGEME)
 # When using Sealed Secrets: commit SealedSecret YAML files instead
+
+graphify-out/*

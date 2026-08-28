@@ -1,0 +1,34 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "Dependency Updates",
+  "dependencyDashboardHeader": "Report-only: nothing here opens a PR by itself. Tick a checkbox below to request one for that update.",
+  "prCreation": "approval",
+  "helmv3": {
+    "fileMatch": ["(^|/)charts/[^/]+/Chart\\.yaml$"]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Container images referenced as a single `image: repo:tag` string in values.yaml (not the split repository:/tag: form helm-values expects)",
+      "fileMatch": ["^charts/foodmission/values\\.yaml$"],
+      "matchStrings": [
+        "image:\\s*(?<depName>[a-zA-Z0-9.\\-/]+):(?<currentValue>[a-zA-Z0-9.\\-]+)\\s*$"
+      ],
+      "datasourceTemplate": "docker"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["helmv3"],
+      "groupName": "helm chart dependencies"
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchDatasources": ["docker"],
+      "groupName": "foodmission images",
+      "description": "Both images float on latest/main — no semver to bump, so this only surfaces as a digest update once a digest is pinned in values.yaml."
+    }
+  ]
+}
