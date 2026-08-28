@@ -137,7 +137,7 @@ jobs:
       # containers, etc.) in the PR checks summary without blocking merge. Flip
       # exit-code to 1 once the existing findings are triaged and this should gate.
       - name: Trivy config scan — rendered manifests
-        uses: aquasecurity/trivy-action@0.29.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: config
           scan-ref: rendered/
