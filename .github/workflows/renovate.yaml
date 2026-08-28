@@ -1,0 +1,28 @@
+name: Renovate
+
+# Report-only dependency dashboard: updates the "Dependency Updates" issue
+# with what's outdated (Helm subchart versions in Chart.yaml, image tags/
+# digests in values.yaml). prCreation: approval in renovate.json means it
+# never opens a PR on its own — only when a checkbox in that issue is ticked.
+on:
+  schedule:
+    - cron: "0 6 * * 1" # weekly, Monday 06:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Renovate
+        uses: renovatebot/github-action@v46.2.4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          RENOVATE_REPOSITORIES: ${{ github.repository }}

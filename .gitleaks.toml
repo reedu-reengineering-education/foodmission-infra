@@ -1,0 +1,11 @@
+title = "gitleaks config — foodmission-infra"
+
+[extend]
+# Start from gitleaks' default ruleset, only add exceptions below.
+useDefault = true
+
+[allowlist]
+description = "Sealed Secrets ciphertext is asymmetrically encrypted and safe to commit — it reads as high-entropy but is not a usable credential without the cluster's private key."
+paths = [
+  '''secrets/.*\.sealed\.yaml$''',
+]

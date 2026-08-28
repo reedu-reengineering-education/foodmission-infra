@@ -8,4 +8,4 @@ spec:
   pluginConfiguration:
     name: barman-cloud.cloudnative-pg.io
   cluster:
-    name: foodmission-pg
+    name: foodmission-pg-staging
