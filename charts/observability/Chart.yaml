@@ -16,7 +16,7 @@ dependencies:
     condition: loki.enabled
   
   - name: prometheus
-    version: "28.14.1"
+    version: "28.16.0"
     repository: "https://prometheus-community.github.io/helm-charts"
     condition: prometheus.enabled
   
@@ -26,6 +26,6 @@ dependencies:
     condition: tempo.enabled
   
   - name: opentelemetry-collector
-    version: "0.147.1"
+    version: "0.172.0"
     repository: "https://open-telemetry.github.io/opentelemetry-helm-charts"
     condition: opentelemetry-collector.enabled
