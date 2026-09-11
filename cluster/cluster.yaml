@@ -32,24 +32,22 @@ masters_pool:
     - nbg1
 
 # The Worker Plane (Required by the tool)
+#
+# ARM (cax11) is the baseline: cheaper, all workload images are multi-arch.
+# One ARM pool per location, because Hetzner volumes are location-bound
+# (CNPG instances have PVs in fsn1, nbg1 and hel1).
+#
+# amd64 (cpx22) pools stay at min 0 as fallback: if Hetzner runs out of
+# ARM capacity, the autoscaler backs off the failing ARM pool and scales up
+# amd64 instead. Already-running servers are never affected by shortages.
+#
+# The autoscaler enforces min_instances (--enforce-node-group-min-size),
+# so ARM nodes get created as soon as this config is applied. It does NOT
+# remove existing amd64 nodes on its own — cordon + drain them manually.
 worker_node_pools:
-- name: workers-fsn1-amd64
-  instance_type: cpx22
+- name: workers-fsn1-arm64
+  instance_type: cax11
   location: fsn1
-  autoscaling:
-    enabled: true
-    min_instances: 2
-    max_instances: 5
-- name: workers-nbg1-amd64
-  instance_type: cpx22
-  location: nbg1
-  autoscaling:
-    enabled: true
-    min_instances: 2
-    max_instances: 5
-- name: workers-hel1-amd64
-  instance_type: cpx22
-  location: hel1
   autoscaling:
     enabled: true
     min_instances: 2
@@ -59,11 +57,32 @@ worker_node_pools:
   location: nbg1
   autoscaling:
     enabled: true
+    min_instances: 2
+    max_instances: 5
+- name: workers-hel1-arm64
+  instance_type: cax11
+  location: hel1
+  autoscaling:
+    enabled: true
+    min_instances: 2
+    max_instances: 5
+- name: workers-fsn1-amd64
+  instance_type: cpx22
+  location: fsn1
+  autoscaling:
+    enabled: true
     min_instances: 0
     max_instances: 5
-- name: workers-fsn1-arm64
-  instance_type: cax11
-  location: fsn1
+- name: workers-nbg1-amd64
+  instance_type: cpx22
+  location: nbg1
+  autoscaling:
+    enabled: true
+    min_instances: 0
+    max_instances: 5
+- name: workers-hel1-amd64
+  instance_type: cpx22
+  location: hel1
   autoscaling:
     enabled: true
     min_instances: 0

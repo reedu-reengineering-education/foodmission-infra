@@ -17,7 +17,16 @@ metadata:
     helm.sh/resource-policy: keep
 spec:
   instances: {{ .Values.cnpg.instances }}
-  
+  enablePDB: {{ .Values.cnpg.enablePDB }}
+  {{- with .Values.cnpg.smartShutdownTimeout }}
+  smartShutdownTimeout: {{ . }}
+  {{- end }}
+
+  {{- with .Values.cnpg.resources }}
+  resources:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
   {{- if .Values.cnpg.imageName }}
   imageName: {{ .Values.cnpg.imageName }}
   {{- end }}

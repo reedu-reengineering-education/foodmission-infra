@@ -14,7 +14,9 @@ metadata:
     meta.helm.sh/release-namespace: {{ .Release.Namespace }}
     description: "FOODMISSION API deployment"
 spec:
+  {{- if not .Values.api.autoscaling.enabled }}
   replicas: {{ .Values.api.replicaCount | default 2 }}
+  {{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ .Release.Name }}
