@@ -26,6 +26,23 @@ cnpg:
   storageClass: ""
   monitoring: true
 
+  # Postgres container resources. Requests make the DB visible to the
+  # scheduler and cluster-autoscaler; without them pods are BestEffort.
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+
+  # PodDisruptionBudget on the primary. With instances: 1 it blocks
+  # `kubectl drain` and autoscaler scale-down forever — disable there.
+  enablePDB: true
+
+  # Seconds Postgres waits for clients to disconnect before a fast
+  # shutdown. Unset = CNPG default (180).
+  # smartShutdownTimeout: 180
+
   backup:
     enabled: false
     barmanStoreName: foodmission-backup-store
@@ -73,6 +90,14 @@ api:
   hostname: api.foodmission.eu
   extraEnv: []  # additional env vars to override sealed secret values (e.g. for PR previews)
   replicaCount: 2
+
+  # CPU-based HorizontalPodAutoscaler. When enabled, replicaCount is ignored
+  # and the HPA owns spec.replicas. Needs metrics-server (bundled with k3s).
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
 
   translations:
     enabled: false  # runs `npm run db:translations` as a post-upgrade hook job; enable per-env
