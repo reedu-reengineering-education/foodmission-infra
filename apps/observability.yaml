@@ -6,13 +6,20 @@ metadata:
 spec:
   project: foodmission
 
-  source:
-    repoURL: https://github.com/reedu-reengineering-education/foodmission-infra.git
-    targetRevision: main
-    path: charts/observability
-    helm:
-      valueFiles:
-        - values.yaml
+  sources:
+    # Helm chart
+    - repoURL: https://github.com/reedu-reengineering-education/foodmission-infra.git
+      targetRevision: main
+      path: charts/observability
+      helm:
+        valueFiles:
+          - values.yaml
+    # SealedSecrets (Grafana admin credentials)
+    - repoURL: https://github.com/reedu-reengineering-education/foodmission-infra.git
+      targetRevision: main
+      path: secrets
+      directory:
+        include: 'grafana-admin.sealed.yaml'
 
   destination:
     server: https://kubernetes.default.svc

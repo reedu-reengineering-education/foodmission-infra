@@ -7,15 +7,27 @@
 grafana:
   enabled: true
   
-  # Admin credentials (password is auto-generated)
-  # Retrieve with: kubectl get secret -n observability observability-grafana -o jsonpath='{.data.admin-password}' | base64 -d
-  adminUser: admin
-  
+  # Admin credentials from SealedSecret secrets/grafana-admin.sealed.yaml.
+  # Without existingSecret the chart generates a random password on every
+  # render (its `lookup` of the old secret doesn't work under Argo CD), so
+  # every Argo re-render changed checksum/secret and rolled Grafana.
+  # Note: Grafana only applies this password when its DB is first created.
+  admin:
+    existingSecret: grafana-admin-credentials
+    userKey: admin-user
+    passwordKey: admin-password
+
   # Persistence for dashboards
   persistence:
     enabled: true
     size: 10Gi
-  
+
+  # PVC is ReadWriteOnce: with RollingUpdate the new pod can land on another
+  # node and wait forever for the volume (Multi-Attach) while the old pod
+  # keeps it. Recreate stops the old pod first.
+  deploymentStrategy:
+    type: Recreate
+
   # Ingress configuration - expose Grafana publicly
   ingress:
     enabled: true
