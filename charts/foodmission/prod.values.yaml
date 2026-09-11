@@ -44,6 +44,10 @@ cnpg:
 api:
   image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:0.2.5
   replicaCount: 3
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 6
   extraEnv:
     - name: MONGODB_OFF_URL
       value: "mongodb://admin:TestPassword123@mongodb-service.off-test.svc.cluster.local:27017/?authSource=admin"
