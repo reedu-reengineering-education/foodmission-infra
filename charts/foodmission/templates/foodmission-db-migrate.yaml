@@ -14,7 +14,7 @@ metadata:
     meta.helm.sh/release-name: {{ .Release.Name }}
     meta.helm.sh/release-namespace: {{ .Release.Namespace }}
     description: "Database migration job using Prisma"
-    "helm.sh/hook": post-install,pre-upgrade
+    "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-weight": "-5"
     "helm.sh/hook-delete-policy": before-hook-creation
 spec:
@@ -35,11 +35,16 @@ spec:
           - sh
           - -c
           - |
-            until pg_isready -h {{ .Values.global.cnpg.clusterName }}-rw.{{ .Values.global.namespace }}.svc.cluster.local -p 5432 -U {{ .Values.global.cnpg.owner }}; do
-              echo "Waiting for database to be ready..."
+            for i in $(seq 1 60); do
+              if pg_isready -h {{ .Values.global.cnpg.clusterName }}-rw.{{ .Values.global.namespace }}.svc.cluster.local -p 5432 -U {{ .Values.global.cnpg.owner }}; then
+                echo "Database is ready!"
+                exit 0
+              fi
+              echo "Waiting for database to be ready... ($i/60)"
               sleep 5
             done
-            echo "Database is ready!"
+            echo "Timed out after 300s waiting for database" >&2
+            exit 1
       containers:
       - name: migrate
         image: {{ .Values.api.image }}
