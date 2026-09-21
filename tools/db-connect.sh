@@ -40,7 +40,7 @@ PASS=$(kubectl -n "$NS" get secret "$SECRET" -o jsonpath='{.data.password}' | ba
 ENC_PASS=$(urlencode "$PASS")
 
 # Clients that take one URL (Prisma, psql, DBeaver URL mode) — password encoded:
-echo "DATABASE_URL=\"postgresql://${USER}:${ENC_PASS}@127.0.0.1:${PORT}/${DB}?sslmode=prefer&schema=public\""
+echo "DATABASE_URL=\"postgresql://${USER}:${ENC_PASS}@127.0.0.1:${PORT}/${DB}?sslmode=disable&schema=public\""
 echo
 # Clients with separate fields (Beekeeper Studio, TablePlus) — password RAW, not encoded:
 echo "host      : 127.0.0.1"
