@@ -35,11 +35,16 @@ spec:
           - sh
           - -c
           - |
-            until pg_isready -h {{ .Values.global.cnpg.clusterName }}-rw.{{ .Values.global.namespace }}.svc.cluster.local -p 5432 -U {{ .Values.global.cnpg.owner }}; do
-              echo "Waiting for database to be ready..."
+            for i in $(seq 1 60); do
+              if pg_isready -h {{ .Values.global.cnpg.clusterName }}-rw.{{ .Values.global.namespace }}.svc.cluster.local -p 5432 -U {{ .Values.global.cnpg.owner }}; then
+                echo "Database is ready!"
+                exit 0
+              fi
+              echo "Waiting for database to be ready... ($i/60)"
               sleep 5
             done
-            echo "Database is ready!"
+            echo "Timed out after 300s waiting for database" >&2
+            exit 1
       containers:
         - name: seed
           image: {{ .Values.api.image }}
