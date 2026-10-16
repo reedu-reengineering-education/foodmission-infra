@@ -134,6 +134,26 @@ api:
     endpoint: http://observability-opentelemetry-collector.observability.svc.cluster.local:4318
 
 # ---------------------------------------------------------------------------
+# Dashboard (foodmission-data-ui, analytics UI in Next.js)
+# Signs in through the `foodmission-api` Keycloak client, so its redirect URIs
+# must include https://<hostname>/api/auth/oauth2/callback/keycloak. The API
+# allows any *.foodmission.(eu|dev) origin for CORS, so no ALLOWED_ORIGINS
+# entry is needed for a hostname under those domains.
+# ---------------------------------------------------------------------------
+dashboard:
+  enabled: false
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-ui:latest
+  hostname: data.foodmission.eu
+  replicaCount: 1
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 384Mi
+
+# ---------------------------------------------------------------------------
 # Keycloak
 # ---------------------------------------------------------------------------
 keycloak:

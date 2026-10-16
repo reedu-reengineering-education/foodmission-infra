@@ -83,6 +83,9 @@ spec:
               secretKeyRef:
                 name: foodmission-secrets
                 key: KEYCLOAK_WEBHOOK_SECRET
+          # Resolved in the realm import (foodmission-api redirect URIs)
+          - name: DASHBOARD_URL
+            value: "https://{{ .Values.dashboard.hostname }}"
           # Constructed URLs (password comes from secret, host from Helm values)
           - name: KC_DB_URL
             value: "jdbc:postgresql://{{ .Values.global.cnpg.clusterName }}-rw.{{ .Values.global.namespace }}.svc.cluster.local:5432/keycloak"
