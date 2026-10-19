@@ -50,7 +50,7 @@ api:
     maxReplicas: 6
   extraEnv:
     - name: MONGODB_OFF_URL
-      value: "mongodb://admin:TestPassword123@mongodb-service.off-test.svc.cluster.local:27017/?authSource=admin"
+      value: "mongodb://admin:TestPassword123@mongodb-service.off-test.svc.cluster.local:27017/off?authSource=admin"
   translations:
     enabled: true
   opentelemetry:
