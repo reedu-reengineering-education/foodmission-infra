@@ -10,7 +10,7 @@ global:
 cnpg:
   instances: 2
   storageSize: 5Gi
-  monitoring: false
+  monitoring: true
 
   # Bootstrap from staging backup (uncomment when needed, then re-comment after restore)
   # bootstrap:
@@ -42,7 +42,12 @@ api:
     enabled: true
   logging:
     level: debug
+  opentelemetry:
+    enabled: "true"
 
 keycloak:
   image: ghcr.io/reedu-reengineering-education/foodmission-keycloak:0.1.2
   hostname: test.auth.foodmission.eu
+
+smtp:
+  fromName: FOODMISSION Test

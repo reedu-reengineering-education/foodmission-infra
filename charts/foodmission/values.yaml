@@ -1,6 +1,7 @@
 # FOODMISSION — default values
 # Override per environment in values-test.yaml / values-staging.yaml / values-prod.yaml
-# Secrets are managed via SealedSecrets (see secrets/*.sealed.yaml)
+# Secrets are managed via SealedSecrets (see secrets/*.sealed.yaml);
+# non-secret app config is rendered into templates/app-configmap.yaml
 
 # ---------------------------------------------------------------------------
 # Global
@@ -88,7 +89,8 @@ clusterIssuer:
 api:
   image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:latest
   hostname: api.foodmission.eu
-  extraEnv: []  # additional env vars to override sealed secret values (e.g. for PR previews)
+  extraEnv: []  # additional env vars (override both the sealed secret and the config ConfigMap)
+  nodeEnv: production
   replicaCount: 2
 
   # CPU-based HorizontalPodAutoscaler. When enabled, replicaCount is ignored
@@ -111,8 +113,6 @@ api:
 
   logging:
     level: info
-    console: "true"
-    file: "true"
 
   opentelemetry:
     enabled: "false"
@@ -135,6 +135,21 @@ keycloak:
 
   admin:
     user: admin
+
+  # Must match files/foodmission-realm.production.json
+  realm: foodmission
+  clientId: foodmission-api
+  serviceClientId: foodmission-service
+
+# ---------------------------------------------------------------------------
+# SMTP (used by Keycloak realm emails; SMTP_PASSWORD is in the sealed secret)
+# ---------------------------------------------------------------------------
+smtp:
+  host: mail.your-server.de
+  port: "587"
+  user: no-reply@foodmission.eu
+  from: no-reply@foodmission.eu
+  fromName: FOODMISSION
 
 # ---------------------------------------------------------------------------
 # Valkey (Redis-compatible cache, Valkey is the MIT-licensed Redis successor)

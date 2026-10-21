@@ -1,0 +1,30 @@
+{{- /*
+Non-secret app config, loaded via envFrom by the API, Keycloak and the
+post-sync DB jobs. Listed after the secretRef there, so these keys win if
+foodmission-secrets still carries an old copy of them.
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/part-of: foodmission
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    environment: {{ .Values.global.environment }}
+data:
+  NODE_ENV: {{ .Values.api.nodeEnv | quote }}
+  LOG_LEVEL: {{ .Values.api.logging.level | quote }}
+  # Keycloak (realm and client IDs must match files/foodmission-realm.production.json)
+  KEYCLOAK_BASE_URL: "https://{{ .Values.keycloak.hostname }}"
+  KEYCLOAK_REALM: {{ .Values.keycloak.realm | quote }}
+  KEYCLOAK_CLIENT_ID: {{ .Values.keycloak.clientId | quote }}
+  KEYCLOAK_SERVICE_CLIENT_ID: {{ .Values.keycloak.serviceClientId | quote }}
+  KEYCLOAK_REDIRECT_URI: "https://{{ .Values.api.hostname }}/auth/callback"
+  # SMTP (SMTP_PASSWORD stays in the sealed secret)
+  SMTP_HOST: {{ .Values.smtp.host | quote }}
+  SMTP_PORT: {{ .Values.smtp.port | quote }}
+  SMTP_USER: {{ .Values.smtp.user | quote }}
+  SMTP_FROM: {{ .Values.smtp.from | quote }}
+  SMTP_FROM_NAME: {{ .Values.smtp.fromName | quote }}

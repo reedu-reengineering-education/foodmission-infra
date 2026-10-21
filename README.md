@@ -86,6 +86,10 @@ helm install sealed-secrets sealed-secrets/sealed-secrets \
 
 ### Sealing Secrets
 
+Only real secrets (passwords, client secrets, keys) belong here. Plain config
+such as `LOG_LEVEL`, `NODE_ENV`, Keycloak URLs/IDs and SMTP host/sender is set in
+the Helm values and rendered into `templates/app-configmap.yaml`.
+
 1. Fill in real values in `secrets/<env>.plain.yaml` (never commit these)
 2. Seal them using the cluster-wide controller:
    ```bash

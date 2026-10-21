@@ -27,6 +27,7 @@ spec:
         app.kubernetes.io/part-of: foodmission
         environment: {{ .Values.global.environment }}
     spec:
+      {{- include "foodmission.dbPrimaryAffinity" . | nindent 6 }}
       initContainers:
       # Wait for database to be ready
       - name: wait-for-db
@@ -56,6 +57,8 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ .Values.cnpg.secretName }}
+            - configMapRef:
+                name: {{ .Release.Name }}-config
           env:
             - name: DATABASE_URL
               value: "postgresql://$(username):$(password)@{{ .Values.global.cnpg.clusterName }}-rw.{{ .Values.global.namespace }}.svc.cluster.local:5432/{{ .Values.global.cnpg.database }}"
