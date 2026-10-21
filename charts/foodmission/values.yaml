@@ -121,6 +121,10 @@ api:
       memory: 512Mi
     limits:
       memory: 1Gi
+  # Run the jobs only on nodes of this type, preferring the one in the
+  # primary's location (cluster/cluster.yaml: one cax21 pool per location).
+  # Empty: any node type.
+  jobInstanceType: cax21
 
   logging:
     level: info
