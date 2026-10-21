@@ -53,6 +53,10 @@ spec:
             drop:
               - ALL
         command: ["node", "node_modules/.bin/prisma", "migrate", "deploy"]
+        {{- with .Values.api.jobResources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         envFrom:
           - secretRef:
               name: {{ .Values.cnpg.secretName }}

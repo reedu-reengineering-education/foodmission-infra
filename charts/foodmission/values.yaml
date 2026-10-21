@@ -111,6 +111,17 @@ api:
     limits:
       memory: 512Mi
 
+  # Migrate / seed / translations hook jobs (same image as the API). Without
+  # requests they were BestEffort: the scheduler counted them as 0 and two
+  # seeds (~400Mi each) next to the CNPG primaries starved a 4GB node.
+  # The limit makes the kernel OOM-kill the job instead of hanging the node.
+  jobResources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
   logging:
     level: info
 

@@ -46,6 +46,10 @@ spec:
           image: {{ .Values.api.image }}
           imagePullPolicy: Always
           command: ['sh', '-c', 'npm run db:translations:prod']
+          {{- with .Values.api.jobResources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
 
           securityContext:
             allowPrivilegeEscalation: false
