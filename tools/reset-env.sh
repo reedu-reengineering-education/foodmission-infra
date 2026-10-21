@@ -58,12 +58,14 @@ die()  { printf '\033[31mERROR: %s\033[0m\n' "$*" >&2; exit 1; }
 # --- cleanup / failure handling ------------------------------------------------
 
 PF_PID=""
+HOOKS_PID=""
 ARGO_PAUSED=false
 DONE=false
 
 on_exit() {
   local rc=$?
   [[ -n "$PF_PID" ]] && kill "$PF_PID" 2>/dev/null || true
+  [[ -n "$HOOKS_PID" ]] && kill "$HOOKS_PID" 2>/dev/null || true
   if $ARGO_PAUSED && ! $DONE; then
     cat >&2 <<EOF
 
@@ -72,6 +74,8 @@ on_exit() {
 !!! resume manually:
 !!!   kubectl -n ${ARGO_NS} patch application ${RELEASE} --type merge \\
 !!!     -p '{"spec":{"syncPolicy":{"automated":$(cat "$OUT_DIR/argo-automated.json" 2>/dev/null || echo '{"prune":false,"selfHeal":true}')}}}'
+!!! Scale api/dashboard back if still at 0 (replicas before reset):
+$(sed 's/^/!!!   /' "$OUT_DIR/replicas.txt" 2>/dev/null)
 !!! Backups are in ${OUT_DIR}
 EOF
   fi
@@ -79,6 +83,21 @@ EOF
 trap on_exit EXIT
 
 # --- helpers -------------------------------------------------------------------
+
+# Scale api/dashboard back to their pre-reset replicas if still at 0. The Argo
+# sync does not do this when an HPA owns the Deployment (the chart omits
+# spec.replicas), and an HPA never scales a target that sits at 0.
+restore_replicas() {
+  local d want have
+  while read -r d want; do
+    [[ -z "$d" || "${want:-0}" == 0 ]] && continue
+    have=$(kubectl -n "$NS" get "$d" -o jsonpath='{.spec.replicas}')
+    if [[ "$have" == 0 ]]; then
+      info "scale $d -> $want"
+      kubectl -n "$NS" scale "$d" --replicas="$want" >/dev/null
+    fi
+  done <<<"$REPLICAS_BEFORE"
+}
 
 secret_val() {
   kubectl -n "$NS" get secret "$SECRET" -o jsonpath="{.data.$1}" | base64 -d
@@ -156,6 +175,9 @@ info "kc realm     : $KC_REALM (admin user: $KC_ADMIN_USER)"
 
 SCALE_SELECTOR='app.kubernetes.io/component in (api,dashboard)'
 SCALE_TARGETS=$(kubectl -n "$NS" get deploy -l "$SCALE_SELECTOR" -o name)
+# "deployment.apps/name replicas" per line, to scale back after the sync
+REPLICAS_BEFORE=$(kubectl -n "$NS" get deploy -l "$SCALE_SELECTOR" \
+  -o jsonpath='{range .items[*]}deployment.apps/{.metadata.name} {.spec.replicas}{"\n"}{end}')
 info "will scale 0 : $(echo $SCALE_TARGETS)"
 
 VALKEY_STS="${RELEASE}-valkey-primary"
@@ -201,6 +223,7 @@ read -r -p "Type 'reset ${ENV}' to continue: " CONFIRM
 [[ "$CONFIRM" == "reset ${ENV}" ]] || die "aborted"
 
 mkdir -p "$OUT_DIR"
+echo "$REPLICAS_BEFORE" > "$OUT_DIR/replicas.txt"
 
 # --- 1. backups ----------------------------------------------------------------
 
@@ -310,8 +333,26 @@ fi
 # --- 7. argo sync (migrate, deploy, seed) ---------------------------------------
 
 log "7/8 ArgoCD sync (migrate -> deploy -> seed -> translations)"
-# Argo auto-sync stays paused; rerun-hooks.sh triggers its own hook sync
-"$(dirname "$0")/rerun-hooks.sh" "$ENV" --yes
+# Argo auto-sync stays paused; rerun-hooks.sh triggers its own hook sync.
+# It runs in the background so api/dashboard can come back as soon as migrate
+# is done, while seed + translations are still running.
+# Delete the old migrate Job here so only the new one can count as done.
+kubectl -n "$NS" delete job -l app.kubernetes.io/component=db-migration --ignore-not-found --wait=true
+"$(dirname "$0")/rerun-hooks.sh" "$ENV" --yes &
+HOOKS_PID=$!
+RESTORED=false
+while kill -0 "$HOOKS_PID" 2>/dev/null; do
+  if ! $RESTORED && [[ "$(kubectl -n "$NS" get job -l app.kubernetes.io/component=db-migration \
+      -o jsonpath='{.items[*].status.succeeded}')" == *1* ]]; then
+    info "migrate done, bringing api/dashboard back"
+    restore_replicas
+    RESTORED=true
+  fi
+  sleep 5
+done
+wait "$HOOKS_PID" || { HOOKS_PID=""; die "rerun-hooks.sh failed"; }
+HOOKS_PID=""
+$RESTORED || restore_replicas
 
 # --- 8. restore argo ------------------------------------------------------------
 
