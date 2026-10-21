@@ -55,6 +55,7 @@ masters_pool:
 # so ARM nodes get created as soon as this config is applied. It does NOT
 # remove existing amd64 nodes on its own — cordon + drain them manually.
 worker_node_pools:
+# CAX11 Workers
 - name: workers-fsn1-arm64
   instance_type: cax11
   location: fsn1
@@ -76,6 +77,29 @@ worker_node_pools:
     enabled: true
     min_instances: 2
     max_instances: 5
+# CAX21 Workers
+- name: arm64-fsn1-cax21
+  instance_type: cax21
+  location: fsn1
+  autoscaling:
+    enabled: true
+    min_instances: 1
+    max_instances: 3
+- name: arm64-nbg1-cax21
+  instance_type: cax21
+  location: nbg1
+  autoscaling:
+    enabled: true
+    min_instances: 1
+    max_instances: 3
+- name: arm64-hel1-cax21
+  instance_type: cax21
+  location: hel1
+  autoscaling:
+    enabled: true
+    min_instances: 1
+    max_instances: 3
+# CPX22 Workers
 - name: workers-fsn1-amd64
   instance_type: cpx22
   location: fsn1
