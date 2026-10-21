@@ -29,6 +29,7 @@ spec:
         app.kubernetes.io/part-of: foodmission
         environment: {{ .Values.global.environment }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/app-configmap.yaml") . | sha256sum }}
         prometheus.io/scrape: 'true'
         prometheus.io/path: '/api/v1/metrics'
         prometheus.io/port: '3000'
@@ -87,6 +88,8 @@ spec:
         envFrom:
           - secretRef:
               name: foodmission-secrets
+          - configMapRef:
+              name: {{ .Release.Name }}-config
         env:
           # Constructed URLs (password comes from secret, host from Helm values)
           - name: DATABASE_URL

@@ -145,7 +145,9 @@ argo_app >/dev/null || die "ArgoCD application $RELEASE not found"
 ARGO_AUTOMATED=$(argo_app | jq -c '.spec.syncPolicy.automated // empty')
 info "argo auto    : ${ARGO_AUTOMATED:-<none>}"
 
-KC_REALM=$(secret_val KEYCLOAK_REALM)
+KC_REALM=$(kubectl -n "$NS" get configmap "${RELEASE}-config" \
+  -o jsonpath='{.data.KEYCLOAK_REALM}' 2>/dev/null)
+[[ -n "$KC_REALM" ]] || KC_REALM=$(secret_val KEYCLOAK_REALM)   # pre-ConfigMap deploys
 KC_ADMIN_USER=$(kubectl -n "$NS" get deploy "${RELEASE}-keycloak" \
   -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="KEYCLOAK_ADMIN")].value}')
 KC_ADMIN_PASS=$(secret_val KEYCLOAK_ADMIN_PASSWORD)
