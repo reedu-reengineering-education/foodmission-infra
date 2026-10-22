@@ -1,0 +1,122 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-data-pvc
+  namespace: off-test
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+  namespace: off-test
+spec:
+  serviceName: mongodb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      # 8GB nodes; the hcloud volume pins the pod to fsn1, so this means the fsn1 cax21 pool
+      nodeSelector:
+        node.kubernetes.io/instance-type: cax21
+      containers:
+        - name: mongodb
+          image: mongo:6.0
+          # Pin the WiredTiger cache explicitly (~50% of limit minus 1GB) so it stays well inside the limit during high-speed inserts
+          args: ["--wiredTigerCacheSizeGB", "2.5"]
+          ports:
+            - containerPort: 27017
+              name: mongodb
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: "admin"
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: "TestPassword123"
+          # Explicitly request and limit resources so K8s protects the process
+          resources:
+            requests:
+              memory: "4Gi"
+              cpu: "1"
+            limits:
+              memory: "6Gi"
+              cpu: "2"
+          volumeMounts:
+            - name: mongodb-data
+              mountPath: /data/db
+      volumes:
+        - name: mongodb-data
+          persistentVolumeClaim:
+            claimName: mongodb-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-service
+  namespace: off-test
+spec:
+  ports:
+    - port: 27017
+      targetPort: 27017
+  selector:
+    app: mongodb
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: openfoodfacts-db-sync
+  namespace: off-test
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: sync-worker
+              image: mongo:6.0
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -e
+                  
+                  echo "Installing curl and certificates..."
+                  apt-get update && apt-get install -y curl ca-certificates
+                  
+                  echo "Starting Open Food Facts database update..."
+
+                  # Streaming directly from the raw .gz link straight into mongorestore
+                  if curl -f -sSL -H "User-Agent: FOODMISSION/1.0 (contact: dev@foodmission.eu )" \
+                    "https://static.openfoodfacts.org/data/openfoodfacts-mongodbdump.gz" | \
+                    mongorestore --host="mongodb-service.off-test.svc.cluster.local" \
+                                 --port=27017 \
+                                 --username="admin" \
+                                 --password="TestPassword123" \
+                                 --authenticationDatabase="admin" \
+                                 --nsInclude="off.*" \
+                                 --drop \
+                                 --gzip \
+                                 --archive; then
+                     echo "Update complete!"
+                  else
+                     echo "Sync failed!"
+                     exit 1
+                  fi
+              resources:
+                requests:
+                  memory: "1Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "2Gi"
+                  cpu: "1"
