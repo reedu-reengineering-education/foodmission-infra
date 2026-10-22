@@ -71,11 +71,11 @@ spec:
           # Must match the `iss` claim, i.e. the public Keycloak URL
           - name: KEYCLOAK_ISSUER
             value: "https://{{ .Values.keycloak.hostname }}/realms/foodmission"
-          # Only the keys the UI needs, not the whole API secret
+          # Only the keys the UI needs, not the whole API config and secret
           - name: KEYCLOAK_CLIENT_ID
             valueFrom:
-              secretKeyRef:
-                name: foodmission-secrets
+              configMapKeyRef:
+                name: {{ .Release.Name }}-config
                 key: KEYCLOAK_CLIENT_ID
           - name: KEYCLOAK_CLIENT_SECRET
             valueFrom:
