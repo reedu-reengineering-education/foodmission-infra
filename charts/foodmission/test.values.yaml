@@ -32,7 +32,7 @@ cnpg:
   #         compression: gzip
 
 api:
-  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:sha-9cb324a
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:0.4.1
   hostname: test.api.foodmission.eu
   replicaCount: 2
   extraEnv:
@@ -44,6 +44,11 @@ api:
     level: debug
   opentelemetry:
     enabled: "true"
+
+dashboard:
+  enabled: true
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-ui:0.1.0
+  hostname: test.data.foodmission.eu
 
 keycloak:
   image: ghcr.io/reedu-reengineering-education/foodmission-keycloak:0.1.2

@@ -1,0 +1,38 @@
+{{- if .Values.dashboard.enabled }}
+{{- /* Separate Ingress and certificate, so a missing DNS record for the UI
+       can't block renewal of the shared API/Keycloak certificate */}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-dashboard-ingress
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/part-of: foodmission
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    environment: {{ .Values.global.environment }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+    description: "Ingress routing for FOODMISSION dashboard"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - {{ .Values.dashboard.hostname | quote }}
+    secretName: {{ .Values.global.tlsSecret }}-dashboard
+  rules:
+  - host: {{ .Values.dashboard.hostname }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Release.Name }}-dashboard-service
+            port:
+              number: 80
+{{- end }}

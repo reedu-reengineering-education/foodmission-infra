@@ -1,0 +1,90 @@
+{{- if .Values.dashboard.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-dashboard
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/part-of: foodmission
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    environment: {{ .Values.global.environment }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+    description: "FOODMISSION analytics dashboard deployment"
+spec:
+  replicas: {{ .Values.dashboard.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}
+      app.kubernetes.io/component: dashboard
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}
+        app.kubernetes.io/component: dashboard
+        app.kubernetes.io/part-of: foodmission
+        environment: {{ .Values.global.environment }}
+    spec:
+      containers:
+      - name: dashboard
+        image: {{ .Values.dashboard.image }}
+        imagePullPolicy: Always
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+              - ALL
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            cpu: {{ .Values.dashboard.resources.requests.cpu | default "50m" }}
+            memory: {{ .Values.dashboard.resources.requests.memory | default "128Mi" }}
+          limits:
+            memory: {{ .Values.dashboard.resources.limits.memory | default "384Mi" }}
+        # No health endpoint; /runtime-env.js is a cheap unauthenticated route
+        readinessProbe:
+          httpGet:
+            path: /runtime-env.js
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /runtime-env.js
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          timeoutSeconds: 5
+        env:
+          # Browser calls the API directly, so this must be the public URL
+          - name: NEXT_PUBLIC_API_URL
+            value: "https://{{ .Values.api.hostname }}/api/v1"
+          - name: BETTER_AUTH_URL
+            value: "https://{{ .Values.dashboard.hostname }}"
+          # Must match the `iss` claim, i.e. the public Keycloak URL
+          - name: KEYCLOAK_ISSUER
+            value: "https://{{ .Values.keycloak.hostname }}/realms/foodmission"
+          # Only the keys the UI needs, not the whole API secret
+          - name: KEYCLOAK_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: foodmission-secrets
+                key: KEYCLOAK_CLIENT_ID
+          - name: KEYCLOAK_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: foodmission-secrets
+                key: KEYCLOAK_CLIENT_SECRET
+          - name: BETTER_AUTH_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: foodmission-secrets
+                key: BETTER_AUTH_SECRET
+{{- end }}
