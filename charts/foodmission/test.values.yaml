@@ -32,7 +32,7 @@ cnpg:
   #         compression: gzip
 
 api:
-  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:pr-449
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:sha-044a799
   hostname: test.api.foodmission.eu
   replicaCount: 2
   extraEnv:
