@@ -14,9 +14,12 @@ metadata:
     meta.helm.sh/release-name: {{ .Release.Name }}
     meta.helm.sh/release-namespace: {{ .Release.Namespace }}
     description: "Database migration job using Prisma"
-    "helm.sh/hook": post-install,pre-upgrade
-    "helm.sh/hook-weight": "-5"
-    "helm.sh/hook-delete-policy": before-hook-creation
+    # Sync hook in wave 1: runs after the CNPG cluster (wave 0) is created and
+    # before the API (wave 2) rolls out. A PreSync hook would deadlock on fresh
+    # namespaces because the DB is only created in the Sync phase.
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   backoffLimit: 3  # Retry up to 3 times in case DB is still initializing
   template:

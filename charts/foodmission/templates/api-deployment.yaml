@@ -13,6 +13,8 @@ metadata:
     meta.helm.sh/release-name: {{ .Release.Name }}
     meta.helm.sh/release-namespace: {{ .Release.Namespace }}
     description: "FOODMISSION API deployment"
+    # After the prisma-migrate hook (wave 1)
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   {{- if not .Values.api.autoscaling.enabled }}
   replicas: {{ .Values.api.replicaCount | default 2 }}
