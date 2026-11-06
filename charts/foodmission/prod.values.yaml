@@ -42,7 +42,7 @@ cnpg:
   #         compression: gzip
 
 api:
-  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:1.0.1
+  image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:1.0.2
   replicaCount: 3
   autoscaling:
     enabled: true
