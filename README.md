@@ -92,12 +92,17 @@ changes required by an upgrade must be applied by hand in every existing env.
    `keycloak.runAsUser: 2000` for images >= 0.1.3 (Keycloak 26.6+), which run as
    uid 2000. With uid 1000 startup fails with `AccessDeniedException` on
    `/opt/keycloak/lib/quarkus`.
-4. **After rollout, apply realm changes** in the admin console of that env:
-   - `foodmission-api` client has an audience mapper for itself (26.6.2+
-     token introspection requires the introspecting client in `aud`).
-   - `foodmission-service` client has `kc-admin-api` as a **Default** client
-     scope (26.8.2+ admin REST API audience check; without it the API gets
-     401 on user creation and execute-actions emails).
+4. **Apply realm changes** in the admin console of that env:
+   - **Before the upgrade** (works on the old version too): `foodmission-api`
+     client → Client scopes → `foodmission-api-dedicated` → Add mapper → By
+     configuration → Audience, name `audience`, Included Client Audience
+     `foodmission-api`, Add to access token + Add to token introspection on.
+     26.6.2+ token introspection requires the introspecting client in `aud`;
+     without it every authenticated API call gets 401.
+   - **After the upgrade** (the scope is created by the 26.8.2 migration):
+     `foodmission-service` client → Client scopes → Add client scope →
+     `kc-admin-api` → **Default**. 26.8.2+ admin REST API audience check;
+     without it the API gets 401 on user creation and execute-actions emails.
 5. **Smoke test** against `https://<env-api-host>/api/v1`. Each step covers
    one upgrade risk:
    ```bash
