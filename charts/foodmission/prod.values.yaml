@@ -62,8 +62,11 @@ dashboard:
   hostname: data.foodmission.eu
 
 keycloak:
-  image: ghcr.io/reedu-reengineering-education/foodmission-keycloak:0.1.2
+  image: ghcr.io/reedu-reengineering-education/foodmission-keycloak:0.1.4
   replicaCount: 2
+  runAsUser: 2000
+  strategy:
+    type: Recreate
 
 valkey:
   enabled: true
