@@ -50,7 +50,7 @@ api:
   image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:<new-tag>
 ```
 
-**Keycloak** — edit `keycloak.image`:
+**Keycloak** — edit `keycloak.image` (for version upgrades see [Upgrading Keycloak](#upgrading-keycloak-majorminor-version)):
 
 ```yaml
 # charts/foodmission/prod.values.yaml
@@ -62,6 +62,44 @@ Typical flow:
 1. Update the tag in the appropriate `*.values.yaml`
 2. Push a PR — CI runs `helm lint` and `helm template | kubeconform` checks
 3. Merge to `main` — ArgoCD picks up the change within ~3 minutes
+
+### Upgrading Keycloak (major/minor version)
+
+Keycloak version upgrades run DB migrations, and those migrations often forbid
+old and new pods running side by side. The realm JSON
+(`charts/foodmission/files/foodmission-realm.production.json`) is only imported
+into a **fresh** database (`--import-realm` skips existing realms), so realm
+changes required by an upgrade must be applied by hand in every existing env.
+
+1. **Dump the Keycloak DB** of the env: `./tools/db-dump.sh <env> keycloak`.
+2. **Switch the Deployment to `Recreate`** so no two versions run at once:
+   ```yaml
+   keycloak:
+     strategy:
+       type: Recreate
+   ```
+   Envs synced with `ServerSideApply=true` (currently **test**) reject this
+   change with `spec.strategy.rollingUpdate: Forbidden` because the defaulted
+   `rollingUpdate` field stays on the live object. Patch it once before the
+   sync; afterwards the env stays on `Recreate`:
+   ```bash
+   kubectl -n foodmission-<env> patch deploy foodmission-<env>-keycloak --type=json -p '[
+     {"op":"remove","path":"/spec/strategy/rollingUpdate"},
+     {"op":"replace","path":"/spec/strategy/type","value":"Recreate"}]'
+   ```
+   Envs using client-side apply (staging, prod) switch without the patch.
+3. **Bump `keycloak.image`** together with any image-level settings, e.g.
+   `keycloak.runAsUser: 2000` for images >= 0.1.3 (Keycloak 26.6+), which run as
+   uid 2000. With uid 1000 startup fails with `AccessDeniedException` on
+   `/opt/keycloak/lib/quarkus`.
+4. **After rollout, apply realm changes** in the admin console of that env:
+   - `foodmission-api` client has an audience mapper for itself (26.6.2+
+     token introspection requires the introspecting client in `aud`).
+   - `foodmission-service` client has `kc-admin-api` as a **Default** client
+     scope (26.8.2+ admin REST API audience check; without it the API gets
+     401 on user creation and execute-actions emails).
+5. Smoke test: login, registration (user creation + verification email),
+   password reset email.
 
 ---
 
