@@ -98,8 +98,37 @@ changes required by an upgrade must be applied by hand in every existing env.
    - `foodmission-service` client has `kc-admin-api` as a **Default** client
      scope (26.8.2+ admin REST API audience check; without it the API gets
      401 on user creation and execute-actions emails).
-5. Smoke test: login, registration (user creation + verification email),
-   password reset email.
+5. **Smoke test** against `https://<env-api-host>/api/v1`. Each step covers
+   one upgrade risk:
+   ```bash
+   API=https://test.api.foodmission.eu/api/v1
+   EMAIL=kc-smoke-$(date +%s)@<a-mailbox-you-can-read>
+   # Keycloak pod Ready and no errors at startup (uid, DB migrations)
+   kubectl -n foodmission-<env> logs deploy/foodmission-<env>-keycloak | grep -E 'ERROR|Listening on'
+   # Register: API creates the user via the admin REST API as foodmission-service
+   # (needs kc-admin-api scope; 401 otherwise)
+   curl -sf -X POST $API/auth/register -H 'content-type: application/json' \
+     -d "{\"username\":\"${EMAIL%@*}\",\"email\":\"$EMAIL\",\"password\":\"Smoke-test-123\"}"
+   # Login (password grant) -> access + refresh token
+   TOKENS=$(curl -sf -X POST $API/auth/login -H 'content-type: application/json' \
+     -d "{\"username\":\"$EMAIL\",\"password\":\"Smoke-test-123\"}")
+   AT=$(echo "$TOKENS" | jq -r .access_token); RT=$(echo "$TOKENS" | jq -r .refresh_token)
+   # Authenticated call: API validates the token online via introspection
+   # (needs foodmission-api audience mapper; 401 otherwise)
+   curl -sf $API/auth/profile -H "authorization: Bearer $AT"
+   # Refresh
+   curl -sf -X POST $API/auth/refresh -H 'content-type: application/json' -d "{\"token\":\"$RT\"}" | jq -r '.access_token|length'
+   # Password reset: always returns 200, so check that the email ARRIVES
+   # (admin API execute-actions-email + SMTP; 26.8.1 no longer falls back
+   # from starttls to plaintext). If not, check API logs for the warning.
+   curl -sf -X POST $API/auth/password-reset -H 'content-type: application/json' -d "{\"email\":\"$EMAIL\"}"
+   ```
+   Then in a browser: sign in to the dashboard (e.g. test.data.foodmission.eu),
+   which goes through the hosted Keycloak login page (custom theme renders,
+   redirect back works). Finally delete the smoke-test user in the admin console.
+
+   A wrong password now returns **400** `invalid_grant` from `/auth/login`
+   (Keycloak 26.6+), not 401, because the API passes Keycloak's status through.
 
 ---
 
