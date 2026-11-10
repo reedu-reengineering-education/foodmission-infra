@@ -51,8 +51,11 @@ dashboard:
   hostname: test.data.foodmission.eu
 
 keycloak:
-  image: ghcr.io/reedu-reengineering-education/foodmission-keycloak:0.1.2
+  image: ghcr.io/reedu-reengineering-education/foodmission-keycloak:0.1.4
   hostname: test.auth.foodmission.eu
+  runAsUser: 2000
+  strategy:
+    type: Recreate
 
 smtp:
   fromName: FOODMISSION Test
