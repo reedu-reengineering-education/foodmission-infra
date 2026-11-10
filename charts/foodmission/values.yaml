@@ -146,13 +146,6 @@ dashboard:
   hostname: data.foodmission.eu
   replicaCount: 1
 
-  # Images >= 0.1.3 (Keycloak 26.6+) run as uid 2000; older ones as 1000.
-  runAsUser: 1000
-
-  # Set to {type: Recreate} for Keycloak version upgrades: DB migrations
-  # don't allow old and new pods to run side by side.
-  strategy: {}
-
   resources:
     requests:
       cpu: 50m
@@ -167,6 +160,13 @@ keycloak:
   image: ghcr.io/reedu-reengineering-education/foodmission-keycloak:main
   hostname: auth.foodmission.eu
   replicaCount: 1
+
+  # Images >= 0.1.3 (Keycloak 26.6+) run as uid 2000; older ones as 1000.
+  runAsUser: 1000
+
+  # Set to {type: Recreate} for Keycloak version upgrades: DB migrations
+  # don't allow old and new pods to run side by side.
+  strategy: {}
 
   resources:
     requests:
