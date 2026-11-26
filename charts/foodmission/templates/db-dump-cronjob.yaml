@@ -1,0 +1,154 @@
+{{- if and .Values.cnpg.enabled .Values.dbDump.enabled }}
+{{- $s3Secret := .Values.dbDump.s3Secret | default .Values.cnpg.backup.s3Secret }}
+{{- $endpoint := .Values.dbDump.endpointURL | default .Values.cnpg.backup.endpointURL }}
+# Nightly logical dumps (pg_dump -Fc), age-encrypted to public keys only and
+# uploaded to S3. Complements, does not replace, the barman base backups.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-db-dump-scripts
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/component: db-dump
+    app.kubernetes.io/part-of: foodmission
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    environment: {{ .Values.global.environment }}
+data:
+  dump.sh: |
+{{ .Files.Get "files/db-dump/dump.sh" | indent 4 }}
+  upload.sh: |
+{{ .Files.Get "files/db-dump/upload.sh" | indent 4 }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-db-dump
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/component: db-dump
+    app.kubernetes.io/part-of: foodmission
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    environment: {{ .Values.global.environment }}
+  annotations:
+    description: "Nightly age-encrypted pg_dump to S3"
+spec:
+  schedule: {{ .Values.dbDump.schedule | quote }}
+  timeZone: {{ .Values.dbDump.timeZone | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ .Release.Name }}
+            app.kubernetes.io/component: db-dump
+            app.kubernetes.io/part-of: foodmission
+            environment: {{ .Values.global.environment }}
+          annotations:
+            checksum/scripts: {{ printf "%s%s" (.Files.Get "files/db-dump/dump.sh") (.Files.Get "files/db-dump/upload.sh") | sha256sum }}
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          volumes:
+            - name: work
+              emptyDir:
+                sizeLimit: {{ .Values.dbDump.workSizeLimit }}
+            - name: scripts
+              configMap:
+                name: {{ .Release.Name }}-db-dump-scripts
+                defaultMode: 0555
+          initContainers:
+            # pg_dump from the cluster's own postgres image: same major as the server.
+            - name: dump
+              image: {{ .Values.cnpg.imageName }}
+              command: ["/bin/bash", "/scripts/dump.sh"]
+              securityContext:
+                allowPrivilegeEscalation: false
+                runAsNonRoot: true
+                runAsUser: 26
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: PGHOST
+                  value: {{ .Values.dbDump.host | default (printf "%s-ro" .Values.global.cnpg.clusterName) | quote }}
+                - name: PGSSLMODE
+                  value: require
+                - name: PGUSER
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.cnpg.secretName }}
+                      key: username
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.cnpg.secretName }}
+                      key: password
+                - name: DATABASES
+                  value: {{ join " " .Values.dbDump.databases | quote }}
+                - name: ENV_NAME
+                  value: {{ .Values.global.namespace | trimPrefix "foodmission-" | quote }}
+                - name: API_IMAGE
+                  value: {{ .Values.api.image | quote }}
+                - name: KEYCLOAK_IMAGE
+                  value: {{ .Values.keycloak.image | quote }}
+                - name: WORK_DIR
+                  value: /work
+              volumeMounts:
+                - name: work
+                  mountPath: /work
+                - name: scripts
+                  mountPath: /scripts
+              {{- with .Values.dbDump.resources }}
+              resources:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+          containers:
+            # Runs as root: installs age + rclone with apk at start.
+            - name: upload
+              image: {{ .Values.dbDump.toolsImage }}
+              command: ["/bin/sh", "/scripts/upload.sh"]
+              securityContext:
+                allowPrivilegeEscalation: false
+              env:
+                - name: WORK_DIR
+                  value: /work
+                - name: AGE_RECIPIENTS
+                  value: {{ required "dbDump.ageRecipients needs at least one age public key" (join "\n" .Values.dbDump.ageRecipients) | quote }}
+                - name: DESTINATION
+                  value: {{ required "dbDump.destinationPath is required (s3://bucket/prefix)" .Values.dbDump.destinationPath | quote }}
+                - name: RETENTION_DAYS
+                  value: {{ .Values.dbDump.retentionDays | quote }}
+                - name: RCLONE_CONFIG_DEST_TYPE
+                  value: s3
+                - name: RCLONE_CONFIG_DEST_PROVIDER
+                  value: Other
+                - name: RCLONE_CONFIG_DEST_ENDPOINT
+                  value: {{ required "dbDump.endpointURL or cnpg.backup.endpointURL is required" $endpoint | quote }}
+                - name: RCLONE_CONFIG_DEST_ACL
+                  value: private
+                - name: RCLONE_CONFIG_DEST_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $s3Secret }}
+                      key: ACCESS_KEY_ID
+                - name: RCLONE_CONFIG_DEST_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $s3Secret }}
+                      key: ACCESS_SECRET_KEY
+              volumeMounts:
+                - name: work
+                  mountPath: /work
+                - name: scripts
+                  mountPath: /scripts
+              {{- with .Values.dbDump.resources }}
+              resources:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+{{- end }}
