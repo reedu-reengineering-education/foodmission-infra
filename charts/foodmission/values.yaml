@@ -57,6 +57,42 @@ cnpg:
     schedule: "0 0 2 * * *"
 
 # ---------------------------------------------------------------------------
+# Nightly logical dumps (templates/db-dump-cronjob.yaml)
+# pg_dump -Fc of each database, encrypted with age to the public keys below
+# (the cluster can't decrypt them), uploaded to S3 and pruned after
+# retentionDays. Complements, does not replace, the barman base backups.
+#
+# Key pair (once):   age-keygen -o foodmission-dumps.key   # prints age1...
+#   Private key into the password manager, delete the file. Only needed to
+#   restore; the restore steps are in each dump's .meta.txt on S3.
+# Manual run:
+#   kubectl -n <ns> create job --from=cronjob/<release>-db-dump dump-manual-1
+# ---------------------------------------------------------------------------
+dbDump:
+  enabled: false
+  schedule: "15 3 * * *"   # after the barman base backup at 02:00
+  timeZone: Etc/UTC
+  databases: [foodmission, keycloak]
+  # Postgres service to dump from. Empty: <clusterName>-ro (a standby), which
+  # needs instances > 1. Use <clusterName>-rw on single-instance clusters.
+  host: ""
+  # age public keys (age1...), one per entry. Keep the private keys off the
+  # cluster. Add a second, offline key as a spare.
+  ageRecipients: []
+  destinationPath: ""      # s3://bucket/prefix, e.g. s3://foodmission-dumps/prod
+  endpointURL: ""          # empty: cnpg.backup.endpointURL
+  s3Secret: ""             # empty: cnpg.backup.s3Secret (keys ACCESS_KEY_ID / ACCESS_SECRET_KEY)
+  retentionDays: 14        # dumps older than this are deleted from S3
+  toolsImage: alpine:3.22  # age + rclone are installed with apk at start
+  workSizeLimit: 2Gi       # emptyDir for the dumps (prod is ~7 MB in total today)
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+
+# ---------------------------------------------------------------------------
 # PostgreSQL managed databases and roles (used by cnpg-cluster & Database CRDs)
 # ---------------------------------------------------------------------------
 postgresql:

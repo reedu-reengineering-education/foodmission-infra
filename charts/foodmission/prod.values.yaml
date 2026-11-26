@@ -41,6 +41,13 @@ cnpg:
   #       wal:
   #         compression: gzip
 
+# Separate bucket in fsn1, away from the barman backups in hel1.
+dbDump:
+  enabled: false  # TODO: enable once ageRecipients holds the public key
+  destinationPath: s3://foodmission-dumps/prod
+  endpointURL: https://fsn1.your-objectstorage.com
+  ageRecipients: []
+
 api:
   image: ghcr.io/reedu-reengineering-education/foodmission-data-framework:1.0.3
   replicaCount: 3
